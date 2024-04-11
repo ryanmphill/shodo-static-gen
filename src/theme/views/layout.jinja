@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="static/styles/main.css" rel="stylesheet" />
+    <title>{{ site_title }}</title>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+
+    {{ article }}
+
+    {{ another_article }}
+
+    {% include 'another_template.jinja' %}
+
+    {% from 'loop_template.jinja' import loop_template as loop_template %}
+    {{ loop_template(['This', 'is', 'content', 'that', 'was', 'dynamically', 'looped', 'through', 'using', 'Jinja', 'Macros!']) }}
+
+    <h2>Getting Started</h2>
+
+    <p>
+        Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python build.py</code>
+        to build your static site in the <code>dist/</code> directory!
+    </p>
+</body>
+</html>
