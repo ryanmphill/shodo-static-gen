@@ -1,10 +1,10 @@
 # Shodo Static Site Generator
 
-This is a Python script I am putting together that builds a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). This currently only supports a single page website, but I am working to expand it soon!
+This is a Python script I am putting together that builds a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and acces the build in the `dist` directory! This currently only supports a single page website, but I am working to expand it soon!
 
 ## How it works
 
-First, there is the main layout template located at `src/theme/views.layout.jinja` that can render partial sub-views, which can either be other Jinja2 templates located in `src/theme/views/partials`, or markdown files located in `src/theme/mardown`. 
+First, there is the main layout template located at `src/theme/views.layout.jinja` that can render partial sub-views, which can either be other Jinja2 templates located in `src/theme/views/partials`, or markdown files located in `src/theme/markdown`.
 
 #### Templates
 
