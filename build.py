@@ -40,16 +40,34 @@ def build_assets():
     for key in config.keys():
         render_args[key] = config[key]
 
+    # Compile HTML in /dist directory
+
+    # Clear destination directory if exists and create new empty directory
+    destination_dir = 'dist/'
+
+    if os.path.exists(destination_dir):
+        # If /dist it exists, clear it
+        shutil.rmtree(destination_dir)
+
+    os.makedirs(destination_dir)
+
+    # Check for existance of favicon in the root dir and copy to dist
+    favicon_link = ''
+    if os.path.exists('src/favicon.ico'):
+        shutil.copyfile('src/favicon.ico', 'dist/favicon.ico')
+        favicon_link = '<link rel="icon" type="image/x-icon" href="/favicon.ico">'
+    
     # Create Document Head
-    def create_doc_head(styles_link): 
+    def create_doc_head(styles_link, favicon_link): 
         return f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="{styles_link}" rel="stylesheet" />
             <title>{ render_args['site_title'] }</title>
+            {favicon_link}
+            <link href="{styles_link}" rel="stylesheet" />
         </head>
         <body>
         """.strip() + "\n"
@@ -62,19 +80,8 @@ def build_assets():
     </html>
     """.strip()
 
-    doc_head = create_doc_head("static/styles/main.css")
-    doc_tail = create_doc_tail("static/scripts/main.js")
-
-    # Compile HTML in /dist directory
-
-    # Clear destination directory if exists and create new empty directory
-    destination_dir = 'dist/'
-
-    if os.path.exists(destination_dir):
-        # If /dist it exists, clear it
-        shutil.rmtree(destination_dir)
-
-    os.makedirs(destination_dir)
+    doc_head = create_doc_head("/static/styles/main.css", favicon_link)
+    doc_tail = create_doc_tail("/static/scripts/main.js")
 
     # Write static index HTML file from dynamic templates
     print('\033[94m' + 'Writing to dist/index.html...')
@@ -91,8 +98,6 @@ def build_assets():
     pages_src_dir = 'src/theme/views/pages/'
     if os.path.exists(pages_src_dir) and os.listdir(pages_src_dir):
         os.makedirs('dist/pages/')
-        doc_head = create_doc_head("../static/styles/main.css")
-        doc_tail = create_doc_tail("../static/scripts/main.js")
         for file in os.listdir(pages_src_dir):
             if file.endswith('.jinja') or file.endswith('.j2') or file.endswith('.jinja2'):
                 template = template_env.get_template(file)
@@ -116,6 +121,14 @@ def build_assets():
 
     # Copy the static directory from src to dist
     shutil.copytree(src_static_scripts_dir, dist_static_scripts_dir)
+
+    # Copy assets
+    print('\033[94m' + 'Copying assets to dist/static/assets...')
+    src_static_assets_dir = 'src/theme/static/assets'
+    dist_static_assets_dir = 'dist/static/assets'
+
+    # Copy the static directory from src to dist
+    shutil.copytree(src_static_assets_dir, dist_static_assets_dir)
 
     # Copy all stylesheets into one file
     print('\033[94m' + 'Combining all stylesheets into dist/static/styles/main.css...')

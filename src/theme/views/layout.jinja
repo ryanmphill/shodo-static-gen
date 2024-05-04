@@ -1,14 +1,7 @@
-{# <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="static/styles/main.css" rel="stylesheet" />
-    <title>{{ site_title }}</title>
-</head>
-<body> #}
-    <h1>{{ title }}</h1>
-
+<header>
+    <h1>{{ home_page_title }}</h1>
+</header>
+<main>
     {{ article }}
 
     {{ another_article }}
@@ -30,10 +23,8 @@
         Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python serve.py</code>
         to build your static site in the <code>dist/</code> directory and start up the development server!
     </p>
-
+</main>
+<footer>
     <div><a href="pages/linked_page.html">Here is a link to a page</a></div>
     <div><a href="pages/another_linked_page.html">And here is a link to another page!</a></div>
-
-    {# <script type="module" src="static/scripts/main.js"></script>
-</body>
-</html> #}
+</footer>
