@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{# <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,7 +6,7 @@
     <link href="static/styles/main.css" rel="stylesheet" />
     <title>{{ site_title }}</title>
 </head>
-<body>
+<body> #}
     <h1>{{ title }}</h1>
 
     {{ article }}
@@ -18,11 +18,22 @@
     {% from 'loop_template.jinja' import loop_template as loop_template %}
     {{ loop_template(['This', 'is', 'content', 'that', 'was', 'dynamically', 'looped', 'through', 'using', 'Jinja', 'Macros!']) }}
 
+    <h2>JavaScript</h2>
+
+    <div id="helloJavaScript">
+        {# HTML rendered by JavaScript #}
+    </div>
+
     <h2>Getting Started</h2>
 
     <p>
-        Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python build.py</code>
-        to build your static site in the <code>dist/</code> directory!
+        Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python serve.py</code>
+        to build your static site in the <code>dist/</code> directory and start up the development server!
     </p>
+
+    <div><a href="pages/linked_page.html">Here is a link to a page</a></div>
+    <div><a href="pages/another_linked_page.html">And here is a link to another page!</a></div>
+
+    {# <script type="module" src="static/scripts/main.js"></script>
 </body>
-</html>
+</html> #}
