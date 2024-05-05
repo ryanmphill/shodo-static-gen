@@ -102,7 +102,8 @@ def build_assets():
             if file.endswith('.jinja') or file.endswith('.j2') or file.endswith('.jinja2'):
                 template = template_env.get_template(file)
                 page_name = os.path.splitext(file)[0]
-                with open(f"dist/pages/{page_name}.html", 'w') as output_file: # use 'w' to open for writing, not reading
+                os.makedirs(f"dist/pages/{page_name}")
+                with open(f"dist/pages/{page_name}/index.html", 'w') as output_file: # use 'w' to open for writing, not reading
                     output_file.write(
                         doc_head +
                         template.render(
