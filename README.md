@@ -66,7 +66,7 @@ Pull down the repository, run `pipenv shell`
 
 Start making changes to `src/theme/views/layout.jinja`
 
-Run `Python build.py` from the main project directory when your ready to generate the site
+Run `Python site_builder.py` from the main project directory when your ready to generate the site
 
 Find your static site located in the `dist/` directory
 
