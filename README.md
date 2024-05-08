@@ -1,6 +1,6 @@
 # Shodo Static Site Generator
 
-This is a Python script I am putting together that builds a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and acces the build in the `dist` directory!
+This is a Python script I am putting together that builds a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
 
 ## How it works
 
@@ -8,7 +8,15 @@ First, there is the main layout template located at `src/theme/views.layout.jinj
 
 #### Templates
 
-This project uses Jinja2 as its templating engine, so it would be beneficial to visit the Jinja [docs](https://jinja.palletsprojects.com/en/3.1.x/). This project leverages Jinja to integrate with Python and build HTML from templates that have acces to functions and variables.
+This project uses Jinja2 as its templating engine, so it would be beneficial to visit the Jinja [docs](https://jinja.palletsprojects.com/en/3.1.x/). This project leverages Jinja to integrate with Python and build HTML from templates that have access to functions and variables.
+
+#### Pages
+
+Any template added to the `pages/` directory will be written as an index.html file in its own subfolder within the `dist` directory. When linking between pages, simply write a backslash followed by the page name, exluding any file extensions. So if you wanted to link to `pages/linked-page.jinja` from `layout.jinja`, the anchor tag would be
+
+```html
+<a href="/linked-page">Click Here!</a>
+```
 
 #### Markdown
 
