@@ -131,8 +131,13 @@ class DataLoader(ABC):
         List all files in the path specified during class initialization
         """
         files = []
-        for file in os.listdir(self.src_path):
-            files.append(file)
+        # Append all files if src_path is directory
+        if os.path.isdir(self.src_path):
+            for file in os.listdir(self.src_path):
+                files.append(file)
+        # Append single file if src_path is file
+        if os.path.isfile(self.src_path):
+            files.append(self.src_path)
         return files
 
     @abstractmethod
