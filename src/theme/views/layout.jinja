@@ -1,30 +1,38 @@
-<header>
-    <h1>{{ home_page_title }}</h1>
+<header class="site-header">
+    <img class="site-header__icon" height="150" width="150" src="/static/images/calligraphy-icon.svg" alt="Calligraphy pen writing on scroll">
+    <h1 class="site-header__site-title">{{ site_title }}</h1>
 </header>
 <main>
-    {{ article }}
+    <h1>{{ home_page_title }}</h1>
+    <article>
+        {{ article }}
+    </article>
+    <article>
+        {{ another_article }}
+    </article>
+    <section>
+        {% include 'another_template.jinja' %}
+    </section>
+    <section>
+        {% from 'loop_template.jinja' import loop_template as loop_template %}
+        {{ loop_template(['This', 'is', 'content', 'that', 'was', 'dynamically', 'looped', 'through', 'using', 'Jinja', 'Macros!']) }}
+    </section>
+    <section>
+        <h2>JavaScript</h2>
 
-    {{ another_article }}
-
-    {% include 'another_template.jinja' %}
-
-    {% from 'loop_template.jinja' import loop_template as loop_template %}
-    {{ loop_template(['This', 'is', 'content', 'that', 'was', 'dynamically', 'looped', 'through', 'using', 'Jinja', 'Macros!']) }}
-
-    <h2>JavaScript</h2>
-
-    <div id="helloJavaScript">
-        {# HTML rendered by JavaScript #}
-    </div>
-
-    <h2>Getting Started</h2>
-
-    <p>
-        Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python serve.py</code>
-        to build your static site in the <code>dist/</code> directory and start up the development server!
-    </p>
+        <div id="helloJavaScript">
+            {# HTML rendered by JavaScript #}
+        </div>
+    </section>
+    <section>
+        <h2>Getting Started</h2>
+        <p>
+            Get started by editing <code>src/theme/views/layout.jinja</code> and then running <code>Python serve.py</code>
+            to build your static site in the <code>dist/</code> directory and start up the development server!
+        </p>
+    </section>
 </main>
 <footer>
-    <div><a href="pages/linked_page">Here is a link to a page</a></div>
-    <div><a href="pages/another_linked_page">And here is a link to another page!</a></div>
+    <div><a href="/linked_page">Here is a link to a page</a></div>
+    <div><a href="/another_linked_page">And here is a link to another page!</a></div>
 </footer>

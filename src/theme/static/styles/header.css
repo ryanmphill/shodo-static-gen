@@ -1,3 +1,20 @@
 h1, h2, h3, h4, h5 {
     color: #151515;
 }
+
+.site-header {
+    display: flex;
+    column-gap: 20px;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 0 8px;
+}
+
+.site-header__icon {
+    max-width: 135px;
+}
+
+.site-header__site-title {
+    font-weight: bold;
+}
