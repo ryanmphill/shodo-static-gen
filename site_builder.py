@@ -34,6 +34,16 @@ class TemplateHandler:
         """
         return self.template_env.get_template(template_name)
 
+    def _log_info(self, page_name, destination):
+        """
+        Prints a status update of the writing operation
+        """
+        print(
+            "\033[94m"
+            + f"Writing html from {page_name} to {destination}..."
+            + "\033[0m"
+        )
+
     def _get_doc_head(
         self,
         site_title,
@@ -76,6 +86,7 @@ class TemplateHandler:
         """
         Render a template with the provided arguments and write the output to a file.
         """
+        self._log_info(template_name, destination_dir)
         template = self.get_template(template_name)
         with open(
             destination_dir, "w", encoding="utf-8"
@@ -113,6 +124,13 @@ class TemplateHandler:
                         file, f"dist/{page_name}/index.html", render_args
                     )
 
+    def write(self, render_args: dict):
+        """
+        Writes the root index.html and any linked html pages using the provided render arguments.
+        """
+        self.write_index_html(render_args)
+        self.write_linked_html_pages(render_args)
+
 
 class DataLoader(ABC):
     """
@@ -141,7 +159,7 @@ class DataLoader(ABC):
         return files
 
     @abstractmethod
-    def load_render_args(self):
+    def load_args(self):
         """
         Load data from the specified file path.
         This method must be implemented by subclasses.
@@ -164,6 +182,12 @@ class MarkdownLoader(DataLoader):
                 md_files.append(file)
         return md_files
 
+    def _log_info(self):
+        """
+        Prints a status message that markdown files are being read and loaded
+        """
+        print("\033[94m" + "Reading markdown files..." + "\033[0m")
+
     def _convert_to_html(self, markdown_file: TextIOWrapper) -> str:
         """
         Takes an open markdown file and converts it to an html string
@@ -172,12 +196,13 @@ class MarkdownLoader(DataLoader):
             markdown_file.read(), extras=["fenced-code-blocks", "code-friendly"]
         )
 
-    def load_render_args(self):
+    def load_args(self):
         """
         Load html converted from markdown files as a dictionary of render arguments,
         where the key is the name of the markdown file, and the value is the converted
         html string to be inserted in the templates.
         """
+        self._log_info()
         converted_html = {}
         for md_file in self.list_files():
             md_file_path = os.path.join(self.src_path, md_file)
@@ -193,11 +218,18 @@ class JSONLoader(DataLoader):
     templates as dictionary render arguments
     """
 
-    def load_render_args(self):
+    def _log_info(self):
+        """
+        Prints a status message that JSON is being loaded
+        """
+        print("\033[94m" + "Loading JSON..." + "\033[0m")
+
+    def load_args(self):
         """
         Load JSON from the specified file path as a Python dict, where the key is the
         variable name in the template files, and the value is the data to be inserted.
         """
+        self._log_info()
         with open(self.src_path, "r", encoding="utf-8") as config_file:
             config = load(config_file)
 
@@ -207,9 +239,9 @@ class JSONLoader(DataLoader):
         return {}
 
 
-class BaseFileWriter:
+class AssetWriter:
     """
-    Base class for single file writing operations
+    Base class for writing and compiling static assets that are to be included in the final build
     """
 
     def __init__(self, src_path: str, destination_path: str):
@@ -222,40 +254,23 @@ class BaseFileWriter:
         """
         print(
             "\033[94m"
-            + f"Copying file {self.src_path} to {self.destination_path}..."
+            + f"Copying contents from {self.src_path} to {self.destination_path}..."
             + "\033[0m"
         )
 
     def write(self):
         """
-        Copies a file from the source path to the destination path.
+        Copies contents of either a single file OR an entire directory from the
+        provided source path to the destination path.
         """
-        shutil.copyfile(self.src_path, self.destination_path)
+        self.log_info()
+        if os.path.isfile(self.src_path):
+            shutil.copyfile(self.src_path, self.destination_path)
+        if os.path.isdir(self.src_path):
+            shutil.copytree(self.src_path, self.destination_path)
 
 
-class AssetWriter(BaseFileWriter):
-    """
-    Writes an entire directory of assets to the specified destination path
-    """
-
-    def log_info(self):
-        """
-        Prints a status message that the file writing operation is taking place
-        """
-        print(
-            "\033[94m"
-            + f"Copying contents from directory {self.src_path} to {self.destination_path}..."
-            + "\033[0m"
-        )
-
-    def write(self):
-        """
-        Copies a directory of assets to the destination directory.
-        """
-        shutil.copytree(self.src_path, self.destination_path)
-
-
-class CSSWriter(BaseFileWriter):
+class CSSWriter(AssetWriter):
     """
     Handles writing all CSS files to the destination directory as a single CSS file
     """
@@ -275,6 +290,7 @@ class CSSWriter(BaseFileWriter):
         """
         Combines all CSS files and writes to the destination directory
         """
+        self.log_info()
         destination_path = self.destination_path.rstrip("/") + "/"
         os.makedirs(destination_path)
         css_files = []
@@ -294,13 +310,13 @@ class CSSWriter(BaseFileWriter):
 
 
 @dataclass
-class Writer:
+class AssetHandler:
     """
     Holds logic for writing static site files to `/dist`,
     including favicon, scripts, styles, and images
     """
 
-    favicon: BaseFileWriter
+    favicon: AssetWriter
     scripts: AssetWriter
     images: AssetWriter
     styles: CSSWriter
@@ -324,7 +340,10 @@ class StaticSiteGenerator:
     """
 
     def __init__(
-        self, template_handler: TemplateHandler, loader: Loader, writer: Writer
+        self,
+        template_handler: TemplateHandler,
+        loader: Loader,
+        asset_handler: AssetHandler,
     ):
         """
         Initializes the StaticSiteGenerator with the necessary components
@@ -332,11 +351,11 @@ class StaticSiteGenerator:
 
         :param template_handler: An instance of TemplateHandler for managing templates.
         :param loader: An instance of Loader for loading markdown and JSON content.
-        :param writer: An instance of Writer for writing static assets.
+        :param asset_handler: An instance of AssetHandler for writing static assets.
         """
         self.template_handler = template_handler
         self.loader = loader
-        self.writer = writer
+        self.asset_handler = asset_handler
 
     def get_proj_abs_path(self):
         """
@@ -380,37 +399,19 @@ class StaticSiteGenerator:
         4. Writes the favicon, index.html, and linked HTML pages.
         5. Copies scripts, assets, and combines all stylesheets into one file.
         """
+        # Load render arguments
         render_args = {}
-        # Read the markdown file as html
-        print("\033[94m" + "Reading markdown files...")
-        render_args.update(self.loader.markdown.load_render_args())
-        # Load configuration
-        print("\033[94m" + "Loading JSON...")
-        render_args.update(self.loader.json.load_render_args())
+        render_args.update(self.loader.markdown.load_args())
+        render_args.update(self.loader.json.load_args())
 
         # Clear destination directory if exists and create new empty directory
         self.refresh_and_create_new_build_dir()
 
-        self.writer.favicon.write()
-        # Write static index HTML file from dynamic templates
-        print("\033[94m" + "Writing to dist/index.html...")
-        self.template_handler.write_index_html(render_args)
-        # Write static index HTML file from dynamic templates
-        print("\033[94m" + "Writing html from src/theme/views/pages to /dist...")
-        self.template_handler.write_linked_html_pages(render_args)
-        # Copy static assets
-        print("\033[94m" + "Writing static assets to dist/static/...")
-        # Copy scripts
-        print("\033[94m" + "Copying scripts...")
-        self.writer.scripts.write()
-        # Copy assets
-        print("\033[94m" + "Copying images...")
-        self.writer.images.write()
-        # Copy all stylesheets into one file
-        print(
-            "\033[94m" + "Combining all stylesheets into dist/static/styles/main.css..."
-        )
-        self.writer.styles.write()
+        self.asset_handler.favicon.write()
+        self.template_handler.write(render_args)
+        self.asset_handler.scripts.write()
+        self.asset_handler.images.write()
+        self.asset_handler.styles.write()
         print("\033[92m" + "Site build successfully completed!" + "\033[0m")
 
 
@@ -427,15 +428,17 @@ def build_static_site():
     )
     markdown_loader = MarkdownLoader("src/theme/markdown/")
     json_loader = JSONLoader("src/config.json")
-    favicon_writer = BaseFileWriter("src/favicon.ico", "dist/favicon.ico")
+    favicon_writer = AssetWriter("src/favicon.ico", "dist/favicon.ico")
     script_writer = AssetWriter("src/theme/static/scripts", "dist/static/scripts")
     image_writer = AssetWriter("src/theme/static/images", "dist/static/images")
     css_writer = CSSWriter("src/theme/static/styles/", "dist/static/styles/")
 
     loader = Loader(markdown_loader, json_loader)
-    writer = Writer(favicon_writer, script_writer, image_writer, css_writer)
+    asset_handler = AssetHandler(
+        favicon_writer, script_writer, image_writer, css_writer
+    )
 
-    site_generator = StaticSiteGenerator(template_handler, loader, writer)
+    site_generator = StaticSiteGenerator(template_handler, loader, asset_handler)
     site_generator.build()
 
 
