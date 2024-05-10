@@ -224,12 +224,13 @@ class JSONLoader(DataLoader):
         """
         print("\033[94m" + "Loading JSON..." + "\033[0m")
 
-    def load_args(self):
+    def load_args(self, verbose=True):
         """
         Load JSON from the specified file path as a Python dict, where the key is the
         variable name in the template files, and the value is the data to be inserted.
         """
-        self._log_info()
+        if verbose:
+            self._log_info()
         with open(self.src_path, "r", encoding="utf-8") as config_file:
             config = load(config_file)
 
@@ -237,6 +238,53 @@ class JSONLoader(DataLoader):
             return config
 
         return {}
+
+
+class SettingsLoader(JSONLoader):
+    """
+    Handles the loading of build settings, including source paths and the
+    destination build directory
+    """
+
+    def __init__(self):
+        """
+        Extends the JSONLoader with the absolute path to the build settings
+        as an argument. 
+        """
+        super().__init__(
+            src_path=os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "build_settings.json"
+            )
+        )
+        self._data = None
+
+    @property
+    def data(self):
+        """
+        The loaded arguments from the build settings json config file
+        """
+        if self._data is None:
+            self._data = self.load_args(False)
+        return self._data
+
+    def _log_info(self):
+        """
+        Prints a status message that JSON settings are being loaded
+        """
+        print("\033[94m" + "Loading settings and configuration..." + "\033[0m")
+
+    def get_build_dir(self):
+        """
+        Returns the build directory from the build_settings.json with
+        any trailing slashes removed
+        """
+        build_dir = self.data["build_dir"]
+        if isinstance(build_dir, str):
+            build_dir = build_dir.rstrip("/")
+        else:
+            build_dir = ""
+
+        return build_dir
 
 
 class AssetWriter:
@@ -423,15 +471,17 @@ def build_static_site():
     favicon, scripts, images, and CSS. It then creates a StaticSiteGenerator instance and calls
     its build method to generate the static site.
     """
-    template_handler = TemplateHandler(
-        ["src/theme/views/", "src/theme/views/partials/", "src/theme/views/pages/"]
-    )
-    markdown_loader = MarkdownLoader("src/theme/markdown/")
-    json_loader = JSONLoader("src/config.json")
-    favicon_writer = AssetWriter("src/favicon.ico", "dist/favicon.ico")
-    script_writer = AssetWriter("src/theme/static/scripts", "dist/static/scripts")
-    image_writer = AssetWriter("src/theme/static/images", "dist/static/images")
-    css_writer = CSSWriter("src/theme/static/styles/", "dist/static/styles/")
+    settings_loader = SettingsLoader()
+    args = settings_loader.data
+    build_dir = settings_loader.get_build_dir()
+
+    template_handler = TemplateHandler(args["template_paths"])
+    markdown_loader = MarkdownLoader(args["markdown_path"])
+    json_loader = JSONLoader(args["json_config_path"])
+    favicon_writer = AssetWriter(args["favicon_path"], f"{build_dir}/favicon.ico")
+    script_writer = AssetWriter(args["scripts_path"], f"{build_dir}/static/scripts")
+    image_writer = AssetWriter(args["images_path"], f"{build_dir}/static/images")
+    css_writer = CSSWriter(args["styles_path"], f"{build_dir}/static/styles")
 
     loader = Loader(markdown_loader, json_loader)
     asset_handler = AssetHandler(
