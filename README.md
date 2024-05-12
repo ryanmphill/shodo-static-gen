@@ -18,6 +18,16 @@ Any template added to the `pages/` directory will be written as an index.html fi
 <a href="/linked-page">Click Here!</a>
 ```
 
+###### Nested Pages
+
+You can create nested pages by adding a subdirectory within `pages/` with the name of the route. For routes with multiple pages, the index page of that route will need to be on the same level as the route subdirectory with the same name followed by the `.jinja` extension. For example:
+```
+__pages/
+____layout.jinja (index template for site)
+____nested.jinja (index template for nested)
+____nested/
+______nested-page.jinja
+```
 #### Markdown
 
 Any markdown files added to the `/markdown` directory will be exposed to `layout.jinja` with a variable name identical to the markdown file name, minus the extension. So, the contents of `article.md` can be passed to the jinja template as `{{ article }}`, where it will be converted to HTML upon running the build script.
@@ -54,9 +64,15 @@ Then after running the build, the HTML should look like the following:
 </ul>
 ```
 
-#### Config.json
+#### config.json
 
 Any property defined in `config.json` will automatically expose a variable with the same name to all jinja templates that has the cooresponding value of the `config.json` property.
+
+#### build_settings.json
+
+This is where all source paths and project settings are defined.
+
+NOTE: _Any path included in `root_template_paths` will have all of its children directories recursively added to the search path for Jinja2, so only top level paths should be included in the settings. In most cases, `"root_template_paths": [ "src/theme/views/" ]` should suffice, but it would be possible to add another path to `src/theme/assets/images` for example if you wanted to use the templates for working with an SVG but still wanted to maintain separation of concerns._
 
 ## Getting Started
 

@@ -1,8 +1,6 @@
 {
-    "template_paths": [
-        "src/theme/views/",
-        "src/theme/views/partials/",
-        "src/theme/views/pages/"
+    "root_template_paths": [
+        "src/theme/views/"
     ],
     "markdown_path": "src/theme/markdown/",
     "json_config_path": "src/config.json",

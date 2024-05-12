@@ -106,23 +106,31 @@ class TemplateHandler:
             "layout.jinja", "dist/index.html", render_args
         )
 
-    def write_linked_html_pages(self, render_args: dict):
+    def write_linked_html_pages(self, render_args: dict, nested_dirs=""):
         """
         Write HTML pages linked from the index page using the provided render arguments.
         """
-        pages_src_dir = "src/theme/views/pages/"
+        pages_src_dir = "src/theme/views/pages/" + nested_dirs
         if os.path.exists(pages_src_dir) and os.listdir(pages_src_dir):
-            for file in os.listdir(pages_src_dir):
+            for path in os.listdir(pages_src_dir):
                 if (
-                    file.endswith(".jinja")
-                    or file.endswith(".j2")
-                    or file.endswith(".jinja2")
+                    path.endswith(".jinja")
+                    or path.endswith(".j2")
+                    or path.endswith(".jinja2")
                 ):
-                    page_name = os.path.splitext(file)[0]
-                    os.makedirs(f"dist/{page_name}")
+                    page_name = nested_dirs + os.path.splitext(path)[0]
+                    if not os.path.exists(f"dist/{page_name}"):
+                        os.makedirs(f"dist/{page_name}")
                     self._write_html_from_template(
-                        file, f"dist/{page_name}/index.html", render_args
+                        path, f"dist/{page_name}/index.html", render_args
                     )
+                path_from_root = os.path.join(
+                    os.path.dirname(os.path.abspath(__file__)), pages_src_dir + path
+                )
+                # If directory, recursively create a nested route
+                if os.path.isdir(path_from_root):
+                    nested_path = nested_dirs + path + "/"
+                    self.write_linked_html_pages(render_args, nested_path)
 
     def write(self, render_args: dict):
         """
@@ -249,7 +257,7 @@ class SettingsLoader(JSONLoader):
     def __init__(self):
         """
         Extends the JSONLoader with the absolute path to the build settings
-        as an argument. 
+        as an argument.
         """
         super().__init__(
             src_path=os.path.join(
@@ -265,6 +273,9 @@ class SettingsLoader(JSONLoader):
         """
         if self._data is None:
             self._data = self.load_args(False)
+            self._data["template_paths"] = self.get_all_template_paths(
+                self._data["root_template_paths"]
+            )
         return self._data
 
     def _log_info(self):
@@ -285,6 +296,40 @@ class SettingsLoader(JSONLoader):
             build_dir = ""
 
         return build_dir
+
+    def get_nested_template_dirs(
+        self, template_path="src/theme/views/", template_dirs=None
+    ):
+        """
+        Retrieves all children directories of a parent template directory as a list
+        """
+        template_path = template_path.rstrip("/") + "/"
+
+        if template_dirs is None:
+            template_dirs = []
+
+        template_dirs.append(template_path)
+        for path in os.listdir(template_path):
+            path_from_root = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), template_path + path
+            )
+            # For each directory, recursively append all a nested directories
+            if os.path.isdir(path_from_root):
+                template_dirs = self.get_nested_template_dirs(
+                    template_path + path, template_dirs
+                )
+        # When no subdirectories remain, return list of template directories
+        return template_dirs
+
+    def get_all_template_paths(self, root_template_paths: list[str]):
+        """
+        Retrieves a list of all nested template paths for each defined root template path
+        """
+        template_paths = []
+        for path in root_template_paths:
+            template_paths.extend(self.get_nested_template_dirs(path))
+        print("List of template directories: ", template_paths)
+        return template_paths
 
 
 class AssetWriter:
