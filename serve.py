@@ -6,17 +6,14 @@ the web server
 
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import sys
-from site_builder import build_static_site
+from site_builder import build_static_site, SettingsLoader
 
-# # Define the directory to serve
-# directory_to_serve = "dist"
-# port = 3000
-
-
-def start_server(directory_to_serve="dist", port=3000):
+def start_server(port=3000):
     """
     Starts a development web server using Python's http.server
     """
+    settings = SettingsLoader()
+    directory_to_serve = settings.get_build_dir()
 
     class Handler(SimpleHTTPRequestHandler):
         """

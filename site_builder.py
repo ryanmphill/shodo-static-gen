@@ -20,13 +20,14 @@ class TemplateHandler:
     Handles the loading and rendering of templates using Jinja2.
     """
 
-    def __init__(self, template_paths: list[str]):
+    def __init__(self, template_paths: list[str], build_dir="dist"):
         """
         Initialize the TemplateHandler with the paths to the template directories.
         """
         self.template_env = Environment(
             loader=FileSystemLoader(searchpath=template_paths)
         )
+        self.build_dir = build_dir
 
     def get_template(self, template_name):
         """
@@ -103,7 +104,7 @@ class TemplateHandler:
         Write the index.html file using the provided render arguments.
         """
         return self._write_html_from_template(
-            "layout.jinja", "dist/index.html", render_args
+            "layout.jinja", f"{self.build_dir}/index.html", render_args
         )
 
     def write_linked_html_pages(self, render_args: dict, nested_dirs=""):
@@ -119,10 +120,10 @@ class TemplateHandler:
                     or path.endswith(".jinja2")
                 ):
                     page_name = nested_dirs + os.path.splitext(path)[0]
-                    if not os.path.exists(f"dist/{page_name}"):
-                        os.makedirs(f"dist/{page_name}")
+                    if not os.path.exists(f"{self.build_dir}/{page_name}"):
+                        os.makedirs(f"{self.build_dir}/{page_name}")
                     self._write_html_from_template(
-                        path, f"dist/{page_name}/index.html", render_args
+                        path, f"{self.build_dir}/{page_name}/index.html", render_args
                     )
                 path_from_root = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), pages_src_dir + path
@@ -328,7 +329,7 @@ class SettingsLoader(JSONLoader):
         template_paths = []
         for path in root_template_paths:
             template_paths.extend(self.get_nested_template_dirs(path))
-        print("List of template directories: ", template_paths)
+
         return template_paths
 
 
@@ -405,7 +406,7 @@ class CSSWriter(AssetWriter):
 @dataclass
 class AssetHandler:
     """
-    Holds logic for writing static site files to `/dist`,
+    Holds logic for writing static site files to the build directory,
     including favicon, scripts, styles, and images
     """
 
@@ -449,6 +450,7 @@ class StaticSiteGenerator:
         self.template_handler = template_handler
         self.loader = loader
         self.asset_handler = asset_handler
+        self.build_dir = template_handler.build_dir
 
     def get_proj_abs_path(self):
         """
@@ -456,28 +458,28 @@ class StaticSiteGenerator:
         """
         return os.path.dirname(os.path.abspath(__file__))
 
-    def get_build_dir_path(self, build_dir="dist"):
+    def get_build_dir_path(self):
         """
         Constructs the absolute path of the build directory from the project root
         """
         project_root = self.get_proj_abs_path()
-        return os.path.join(project_root, build_dir)
+        return os.path.join(project_root, self.build_dir)
 
-    def clear_build_dir(self, build_dir="dist"):
+    def clear_build_dir(self):
         """
-        Removes the current `dist` directory
+        Removes the current build directory
         """
-        build_dir_path = self.get_build_dir_path(build_dir)
+        build_dir_path = self.get_build_dir_path()
         if os.path.exists(build_dir_path):
-            # If /dist exists, clear it
+            # If build directory exists, clear it
             shutil.rmtree(build_dir_path)
 
-    def refresh_and_create_new_build_dir(self, build_dir="dist"):
+    def refresh_and_create_new_build_dir(self):
         """
         Clears build directory if exists and creates a new one
         """
-        build_dir_path = self.get_build_dir_path(build_dir)
-        self.clear_build_dir(build_dir_path)
+        build_dir_path = self.get_build_dir_path()
+        self.clear_build_dir()
         os.makedirs(build_dir_path)
 
     def build(self):
@@ -520,7 +522,7 @@ def build_static_site():
     args = settings_loader.data
     build_dir = settings_loader.get_build_dir()
 
-    template_handler = TemplateHandler(args["template_paths"])
+    template_handler = TemplateHandler(args["template_paths"], build_dir)
     markdown_loader = MarkdownLoader(args["markdown_path"])
     json_loader = JSONLoader(args["json_config_path"])
     favicon_writer = AssetWriter(args["favicon_path"], f"{build_dir}/favicon.ico")
