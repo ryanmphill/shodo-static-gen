@@ -104,7 +104,7 @@ class TemplateHandler:
         Write the index.html file using the provided render arguments.
         """
         return self._write_html_from_template(
-            "layout.jinja", f"{self.build_dir}/index.html", render_args
+            "home.jinja", f"{self.build_dir}/index.html", render_args
         )
 
     def write_linked_html_pages(self, render_args: dict, nested_dirs=""):
