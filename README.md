@@ -4,7 +4,7 @@ This is a Python script I am putting together that builds a static site from mar
 
 ## How it works
 
-First, there is the main layout template located at `src/theme/views.layout.jinja` that can render partial sub-views, which can either be other Jinja2 templates located in `src/theme/views/partials`, or markdown files located in `src/theme/markdown`.
+First, there is the main home page template located at `src/theme/views/home.jinja` that can render partial sub-views, which can either be other Jinja2 templates located in `src/theme/views/partials`, or markdown files located in `src/theme/markdown`.
 
 #### Templates
 
@@ -12,7 +12,7 @@ This project uses Jinja2 as its templating engine, so it would be beneficial to 
 
 #### Pages
 
-Any template added to the `pages/` directory will be written as an index.html file in its own subfolder within the `dist` directory. When linking between pages, simply write a backslash followed by the page name, exluding any file extensions. So if you wanted to link to `pages/linked-page.jinja` from `layout.jinja`, the anchor tag would be
+Any template added to the `pages/` directory will be written as an index.html file in its own subfolder within the `dist` directory. When linking between pages, simply write a backslash followed by the page name, exluding any file extensions. So if you wanted to link to `pages/linked-page.jinja` from `home.jinja`, the anchor tag would be
 
 ```html
 <a href="/linked-page">Click Here!</a>
@@ -30,7 +30,7 @@ ______nested-page.jinja (template for '/nested/nested-page')
 ```
 #### Markdown
 
-Any markdown files added to the `/markdown` directory will be exposed to `layout.jinja` with a variable name identical to the markdown file name, minus the extension. So, the contents of `article.md` can be passed to the jinja template as `{{ article }}`, where it will be converted to HTML upon running the build script.
+Any markdown files added to the `/markdown` directory will be exposed to Jinja templates with a variable name identical to the markdown file name, minus the extension. So, the contents of `article.md` can be passed to the Jinja template as `{{ article }}`, where it will be converted to HTML upon running the build script.
 
 #### Dynamic data
 
@@ -46,7 +46,7 @@ For rendering dynamic data, Jinja Macros can be used for looping through a passe
 {%- endmacro %}
 ```
 
-Then, it can be included in the layout:
+Then, it can be included in the main template:
 
 ```
 {% from 'loop_template.jinja' import loop_template as loop_template %}
@@ -80,7 +80,7 @@ Make sure you have `pipenv` installed
 
 Pull down the repository, run `pipenv shell`
 
-Start making changes to `src/theme/views/layout.jinja`
+Start making changes to `src/theme/views/home.jinja`
 
 Run `Python site_builder.py` from the main project directory when your ready to generate the site
 
