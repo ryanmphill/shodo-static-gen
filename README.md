@@ -23,10 +23,10 @@ Any template added to the `pages/` directory will be written as an index.html fi
 You can create nested pages by adding a subdirectory within `pages/` with the name of the route. For routes with multiple pages, the index page of that route will need to be on the same level as the route subdirectory with the same name followed by the `.jinja` extension. For example:
 ```
 __pages/
-____layout.jinja (index template for site)
-____nested.jinja (index template for nested)
+____about.jinja (template for '/about')
+____nested.jinja (index template for '/nested')
 ____nested/
-______nested-page.jinja
+______nested-page.jinja (template for '/nested/nested-page')
 ```
 #### Markdown
 
