@@ -5,10 +5,10 @@
 <main>
     <h1>{{ home_page_title }}</h1>
     <article>
-        {{ article }}
+        {{ excerpt }}
     </article>
     <article>
-        {{ another_article }}
+        {{ another_excerpt }}
     </article>
     <section>
         {% include 'another_template.jinja' %}
@@ -35,4 +35,6 @@
 <footer>
     <div><a href="/linked_page">Here is a link to a page</a></div>
     <div><a href="/nested-route/double-nested-route">Here is a link to a nested page!</a></div>
+    <div><a href="/blog">Blog</a></div>
+    <div><a href="/newsletter/5-23-2024">Newsletter</a></div>
 </footer>

@@ -119,11 +119,14 @@ class TemplateHandler:
                     or path.endswith(".j2")
                     or path.endswith(".jinja2")
                 ):
+                    template_name = os.path.join(nested_dirs, path)
                     page_name = nested_dirs + os.path.splitext(path)[0]
                     if not os.path.exists(f"{self.build_dir}/{page_name}"):
                         os.makedirs(f"{self.build_dir}/{page_name}")
                     self._write_html_from_template(
-                        path, f"{self.build_dir}/{page_name}/index.html", render_args
+                        template_name,
+                        f"{self.build_dir}/{page_name}/index.html",
+                        render_args,
                     )
                 path_from_root = os.path.join(
                     os.path.dirname(os.path.abspath(__file__)), pages_src_dir + path
@@ -133,12 +136,49 @@ class TemplateHandler:
                     nested_path = nested_dirs + path + "/"
                     self.write_linked_html_pages(render_args, nested_path)
 
-    def write(self, render_args: dict):
+    def write_article_pages(self, md_pages: list[dict[str, str]], render_args: dict):
+        """
+        Writes html pages for each markdown file in the `articles` directory
+        """
+        for md_page in md_pages:
+            # Get the layout for this template
+            layout_template = self.get_md_layout_template(md_page["url_segment"])
+            # Get the path
+            build_path = os.path.join(
+                self.build_dir.strip("/"),
+                md_page["url_segment"].strip("/"),
+                md_page["name"].strip("/"),
+            )
+            if not os.path.exists(build_path):
+                os.makedirs(build_path)
+            render_args["article"] = md_page["html"]
+            self._write_html_from_template(
+                layout_template, f"{build_path}/index.html", render_args
+            )
+
+    def get_md_layout_template(self, url_segment: str):
+        """
+        Retrieves the layout template that maps to the specified
+        article path. If no layout is defined in the template directory
+        with the same name, the layout template closest in the tree will
+        be used.
+        """
+        if not url_segment:
+            return "articles/layout.jinja"
+        template_path = os.path.join("articles", url_segment.strip("/"), "layout.jinja")
+        if os.path.exists(f"src/theme/views/{template_path}"):
+            return template_path
+        segments = url_segment.strip("/").split("/")
+        segments.pop()
+        return self.get_md_layout_template("/".join(segments))
+
+    def write(self, render_args: dict, md_pages: list[dict]):
         """
         Writes the root index.html and any linked html pages using the provided render arguments.
         """
         self.write_index_html(render_args)
         self.write_linked_html_pages(render_args)
+        self.write_article_pages(md_pages, render_args)
 
 
 class DataLoader(ABC):
@@ -146,7 +186,7 @@ class DataLoader(ABC):
     Abstract base class for loading data from files.
     """
 
-    def __init__(self, src_path):
+    def __init__(self, src_path: str):
         """
         Initializes the DataLoader with a specified path to the data, which
         could include Markdown files or JSON
@@ -181,14 +221,17 @@ class MarkdownLoader(DataLoader):
     strings. Extends DataLoader
     """
 
-    def list_files(self):
+    def list_files(self, sub_dir="partials") -> list[tuple[str]]:
         """
-        Lists all markdown files in the path specified during class initialization
+        Lists all markdown files in the root path specified during class initialization. Returns
+        list of tuple pairs packed with the directory path followed by the file name.
         """
         md_files = []
-        for file in os.listdir(self.src_path):
-            if file.endswith(".md"):
-                md_files.append(file)
+        md_dirs = self._get_nested_markdown_dirs(os.path.join(self.src_path, sub_dir))
+        for md_dir_path in md_dirs:
+            for file in os.listdir(md_dir_path):
+                if file.endswith(".md"):
+                    md_files.append((md_dir_path, file))
         return md_files
 
     def _log_info(self):
@@ -213,12 +256,52 @@ class MarkdownLoader(DataLoader):
         """
         self._log_info()
         converted_html = {}
-        for md_file in self.list_files():
-            md_file_path = os.path.join(self.src_path, md_file)
+        for md_dir_path, md_file in self.list_files():
+            md_file_path = os.path.join(md_dir_path, md_file)
             md_var_name = os.path.splitext(md_file)[0]
             with open(md_file_path, "r", encoding="utf-8") as markdown_file:
                 converted_html[md_var_name] = self._convert_to_html(markdown_file)
         return converted_html
+
+    def load_pages(self):
+        """
+        Load html for markdown articles and prepare data for each to be loaded
+        as a separate page
+        """
+        markdown_pages = []
+        for md_dir_path, md_file in self.list_files("articles"):
+            page = {}
+            md_file_path = os.path.join(md_dir_path, md_file)
+            with open(md_file_path, "r", encoding="utf-8") as markdown_file:
+                page["html"] = self._convert_to_html(markdown_file)
+            page["url_segment"] = md_dir_path.replace("src/theme/markdown/articles", "")
+            page["name"] = os.path.splitext(md_file)[0]
+            markdown_pages.append(page)
+        return markdown_pages
+
+    def _get_nested_markdown_dirs(
+        self, markdown_path="src/theme/markdown/partials", markdown_dirs=None
+    ) -> list[str]:
+        """
+        Retrieves all children directories of a parent markdown directory as a list
+        """
+        markdown_path = markdown_path.rstrip("/") + "/"
+
+        if markdown_dirs is None:
+            markdown_dirs = []
+
+        markdown_dirs.append(markdown_path)
+        for path in os.listdir(markdown_path):
+            path_from_root = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), markdown_path + path
+            )
+            # For each directory, recursively append all a nested directories
+            if os.path.isdir(path_from_root):
+                markdown_dirs = self._get_nested_markdown_dirs(
+                    markdown_path + path, markdown_dirs
+                )
+        # When no subdirectories remain, return list of markdown directories
+        return markdown_dirs
 
 
 class JSONLoader(DataLoader):
@@ -499,11 +582,14 @@ class StaticSiteGenerator:
         render_args.update(self.loader.markdown.load_args())
         render_args.update(self.loader.json.load_args())
 
+        # Load markdown pages
+        md_pages = self.loader.markdown.load_pages()
+
         # Clear destination directory if exists and create new empty directory
         self.refresh_and_create_new_build_dir()
 
         self.asset_handler.favicon.write()
-        self.template_handler.write(render_args)
+        self.template_handler.write(render_args, md_pages)
         self.asset_handler.scripts.write()
         self.asset_handler.images.write()
         self.asset_handler.styles.write()
