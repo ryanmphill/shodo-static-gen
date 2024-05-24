@@ -3,7 +3,7 @@ This page was automatically generated as html by creating a markdown file in the
 
 Articles from the `markdown/articles` directory are rendered with a reusable template defined in `views/articles/` Just add a `layout.jinja` file under a subdirectory that matches the subdirectory tree used in `markdown/articles`, or simply define a `layout.jinja` at the root of `views/articles` if you want to use a single layout template for all articles. 
 
-The site builder will always match up the layout template that is closest in the tree, so `markdown/articles/blog/updates/new-post.jinja` would be matched with `views/articles/blog/layout.jinja` if no layout is defined for the `updates` directory.
+The site builder will always match up the layout template that is closest in the tree, so `markdown/articles/blog/updates/new-post.md` would be matched with `views/articles/blog/layout.jinja` if no layout is defined for the `updates` directory.
 
 #### layout.jinja
 
