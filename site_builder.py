@@ -8,11 +8,11 @@ from abc import ABC, abstractmethod
 import os
 import shutil
 from io import TextIOWrapper
-from markdown2 import markdown  # Will convert markdown file to html
+from markdown2 import markdown
 from jinja2 import (
     Environment,
     FileSystemLoader,
-)  # Take layout.jinja, inject markdown into it and create final output html
+)
 
 
 class TemplateHandler:
@@ -89,9 +89,7 @@ class TemplateHandler:
         """
         self._log_info(template_name, destination_dir)
         template = self.get_template(template_name)
-        with open(
-            destination_dir, "w", encoding="utf-8"
-        ) as output_file:  # use 'w' to open for writing, not reading
+        with open(destination_dir, "w", encoding="utf-8") as output_file:
             output_file.write(
                 self._get_doc_head(render_args["site_title"])
                 + template.render(render_args)
