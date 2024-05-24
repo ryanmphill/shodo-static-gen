@@ -8,3 +8,9 @@ main {
     max-width: 600px;
     margin: 0 auto;
 }
+
+.container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}

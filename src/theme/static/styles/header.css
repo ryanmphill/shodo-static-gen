@@ -2,7 +2,8 @@ h1, h2, h3, h4, h5 {
     color: #151515;
 }
 
-.site-header {
+.site-header,
+.page-header {
     display: flex;
     column-gap: 20px;
     justify-content: center;
@@ -15,6 +16,7 @@ h1, h2, h3, h4, h5 {
     max-width: 135px;
 }
 
-.site-header__site-title {
+.site-header__site-title,
+.page-header__title {
     font-weight: bold;
 }
