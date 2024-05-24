@@ -30,7 +30,54 @@ ______nested-page.jinja (template for '/nested/nested-page')
 ```
 #### Markdown
 
-Any markdown files added to the `/markdown` directory will be exposed to Jinja templates with a variable name identical to the markdown file name, minus the extension. So, the contents of `article.md` can be passed to the Jinja template as `{{ article }}`, where it will be converted to HTML upon running the build script.
+##### Partial markdown content to include in templates
+
+Any markdown files added to the `/markdown/partials` directory will be exposed to Jinja templates with a variable name identical to the markdown file name, minus the extension. So, the contents of `summary.md` can be passed to the Jinja template as `{{ summary }}`, where it will be converted to HTML upon running the build script.
+
+##### Generating full pages from markdown
+
+In addition to partial variables that can be included in templates, entire new pages can also be automatically be generated from markdown files added to the 
+`markdown/articles` directory. The url path to the page will match what is defined in the `markdown/articles` directory.
+
+Articles from the `markdown/articles` directory are rendered with a reusable template defined in `views/articles/` Just add a `layout.jinja` file under a subdirectory that matches the subdirectory tree used in `markdown/articles`, or simply define a `layout.jinja` at the root of `views/articles` if you want to use a single layout template for all articles. In the `layout.jinja` file, control where you would like your content to be dynamically inserted by passing in the reserved `{{ article }}` variable. More below.
+
+The site builder will always match up the layout template that is closest in the tree, so `markdown/articles/blog/updates/new-post.md` would be matched with `views/articles/blog/layout.jinja` if no layout is defined for the `updates` directory.
+
+```
+__markdown/
+____articles/
+______blog/
+________updates/
+__________new-post.md
+```
+
+```
+__views/
+____articles/
+______layout.jinja (default root layout for all markdown 'articles')
+______blog/
+________layout.jinja (Maps to markdown/articles/blog, overwrites root layout)
+________updates/
+__________layout.jinja (Maps to markdown/../updates, overwrites other previous layouts in tree)
+```
+
+###### layout.jinja
+
+The `layout.jinja` is just a normal jinja template, but the `{{ article }}` variable has been reserved as a `children` variable for passing in the content from each page. Simply define whatever repeated layout you would like to wrap the `{{ article }}` content, such as a header and footer.
+
+Here is an example layout template:
+
+```html
+<div class="container">
+    <header class="page-header">
+        <h1 class="page-header__title">This is the root article layout</h1>
+    </header>
+    <main>
+        {{ article }}
+    </main>
+    <footer>Thanks for reading</footer>
+</div>
+```
 
 #### Dynamic data
 

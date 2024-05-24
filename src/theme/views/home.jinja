@@ -1,3 +1,4 @@
+<div class="container">
 <header class="site-header">
     <img class="site-header__icon" height="150" width="150" src="/static/images/calligraphy-icon.svg" alt="Calligraphy pen writing on scroll">
     <h1 class="site-header__site-title">{{ site_title }}</h1>
@@ -5,10 +6,10 @@
 <main>
     <h1>{{ home_page_title }}</h1>
     <article>
-        {{ article }}
+        {{ short }}
     </article>
     <article>
-        {{ another_article }}
+        {{ another_short }}
     </article>
     <section>
         {% include 'another_template.jinja' %}
@@ -33,6 +34,8 @@
     </section>
 </main>
 <footer>
-    <div><a href="/linked_page">Here is a link to a page</a></div>
-    <div><a href="/nested-route/double-nested-route">Here is a link to a nested page!</a></div>
+    <div><a href="/linked_page">Linked Template Page</a></div>
+    <div><a href="/blog">Blog</a></div>
+    <div><a href="/newsletter/monthly-update">Newsletter</a></div>
 </footer>
+</div>
