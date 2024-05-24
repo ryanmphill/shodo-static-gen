@@ -99,7 +99,7 @@ class TemplateHandler:
                 + self._get_doc_tail()
             )
 
-    def write_index_html(self, render_args: dict):
+    def write_home_template(self, render_args: dict):
         """
         Write the index.html file using the provided render arguments.
         """
@@ -107,7 +107,7 @@ class TemplateHandler:
             "home.jinja", f"{self.build_dir}/index.html", render_args
         )
 
-    def write_linked_html_pages(self, render_args: dict, nested_dirs=""):
+    def write_linked_template_pages(self, render_args: dict, nested_dirs=""):
         """
         Write HTML pages linked from the index page using the provided render arguments.
         """
@@ -134,7 +134,7 @@ class TemplateHandler:
                 # If directory, recursively create a nested route
                 if os.path.isdir(path_from_root):
                     nested_path = nested_dirs + path + "/"
-                    self.write_linked_html_pages(render_args, nested_path)
+                    self.write_linked_template_pages(render_args, nested_path)
 
     def write_article_pages(self, md_pages: list[dict[str, str]], render_args: dict):
         """
@@ -176,8 +176,8 @@ class TemplateHandler:
         """
         Writes the root index.html and any linked html pages using the provided render arguments.
         """
-        self.write_index_html(render_args)
-        self.write_linked_html_pages(render_args)
+        self.write_home_template(render_args)
+        self.write_linked_template_pages(render_args)
         self.write_article_pages(md_pages, render_args)
 
 
@@ -263,10 +263,15 @@ class MarkdownLoader(DataLoader):
                 converted_html[md_var_name] = self._convert_to_html(markdown_file)
         return converted_html
 
-    def load_pages(self):
+    def load_pages(self) -> list[dict[str, str]]:
         """
         Load html for markdown articles and prepare data for each to be loaded
-        as a separate page
+        as a separate page. Returns list of dictionaries with the following
+        key/value pairs:
+            `"html"`: The full converted html string,
+            `"url_segment"`: The path to the markdown file from the markdown/articles directory,
+                            used for matching a layout template to the `.md` file
+            `"name"`: The name of the file, minus the extension
         """
         markdown_pages = []
         for md_dir_path, md_file in self.list_files("articles"):
