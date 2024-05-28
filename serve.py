@@ -6,7 +6,9 @@ the web server
 
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import sys
-from site_builder import build_static_site, SettingsLoader
+from static_site_builder import SettingsLoader
+from site_builder import build_static_site
+
 
 def start_server(port=3000):
     """
