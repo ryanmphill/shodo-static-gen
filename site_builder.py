@@ -1,4 +1,5 @@
-"""This module builds a static site in the destination directory from jinja2
+"""
+This module builds a static site in the destination directory from jinja2
 templates and all static assets
 """
 
@@ -9,11 +10,65 @@ from static_site_builder import (
     JSONLoader,
     SettingsLoader,
     Loader,
-    AssetWriter,
+    FaviconWriter,
+    ScriptWriter,
+    ImageWriter,
     CSSWriter,
     AssetHandler,
     StaticSiteGenerator,
 )
+
+
+def load_settings(root_path: str):
+    """
+    Loads the settings from the settings.json file in the root directory.
+
+    Returns:
+        dict: The settings data loaded from the settings.json file
+    """
+    settings_loader = SettingsLoader(root_path)
+    return settings_loader.data
+
+
+def initialize_components(settings: dict):
+    """
+    Initializes the components necessary for building the static site.
+
+    Args:
+        settings (dict): The settings data loaded from the settings.json file
+
+    Returns:
+        Tuple[TemplateHandler, Loader, AssetHandler]: A tuple containing the initialized components
+    """
+    template_handler = TemplateHandler(settings)
+    markdown_loader = MarkdownLoader(settings)
+    json_loader = JSONLoader(settings)
+    favicon_writer = FaviconWriter(settings)
+    script_writer = ScriptWriter(settings)
+    image_writer = ImageWriter(settings)
+    css_writer = CSSWriter(settings)
+
+    loader = Loader(markdown_loader, json_loader)
+    asset_handler = AssetHandler(
+        favicon_writer, script_writer, image_writer, css_writer
+    )
+
+    return (template_handler, loader, asset_handler)
+
+
+def generate_site(
+    template_handler: TemplateHandler, loader: Loader, asset_handler: AssetHandler
+):
+    """
+    Generates the static site by calling the build method of the StaticSiteGenerator.
+
+    Args:
+        template_handler (TemplateHandler): The initialized TemplateHandler
+        loader (Loader): The initialized Loader
+        asset_handler (AssetHandler): The initialized AssetHandler
+    """
+    site_generator = StaticSiteGenerator(template_handler, loader, asset_handler)
+    site_generator.build()
 
 
 def build_static_site():
@@ -24,32 +79,17 @@ def build_static_site():
     favicon, scripts, images, and CSS. It then creates a StaticSiteGenerator instance and calls
     its build method to generate the static site.
     """
-    # Set the ROOT_PATH environment variable to the directory of this file
-    os.environ.setdefault("ROOT_PATH", os.path.dirname(os.path.abspath(__file__)))
+    # Set the ROOT_PATH variable to the directory of this file
+    root_path = os.path.dirname(os.path.abspath(__file__))
 
     # Load settings
-    settings_loader = SettingsLoader()
-    args = settings_loader.data
-    build_dir = settings_loader.get_build_dir()
+    settings = load_settings(root_path)
 
     # Initialize components
-    template_handler = TemplateHandler(args["template_paths"], build_dir)
-    markdown_loader = MarkdownLoader(args["markdown_path"])
-    json_loader = JSONLoader(args["json_config_path"])
-    favicon_writer = AssetWriter(args["favicon_path"], f"{build_dir}/favicon.ico")
-    script_writer = AssetWriter(args["scripts_path"], f"{build_dir}/static/scripts")
-    image_writer = AssetWriter(args["images_path"], f"{build_dir}/static/images")
-    css_writer = CSSWriter(args["styles_path"], f"{build_dir}/static/styles")
-
-    loader = Loader(markdown_loader, json_loader)
-    asset_handler = AssetHandler(
-        favicon_writer, script_writer, image_writer, css_writer
-    )
-
-    site_generator = StaticSiteGenerator(template_handler, loader, asset_handler)
+    template_handler, loader, asset_handler = initialize_components(settings)
 
     # Build the static site
-    site_generator.build()
+    generate_site(template_handler, loader, asset_handler)
 
 
 if __name__ == "__main__":
