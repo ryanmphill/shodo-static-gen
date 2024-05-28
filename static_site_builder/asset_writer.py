@@ -7,6 +7,8 @@ from dataclasses import dataclass
 import os
 import shutil
 
+from static_site_builder.data_loader import SettingsDict
+
 
 class AssetWriter:
     """
@@ -39,10 +41,60 @@ class AssetWriter:
             shutil.copytree(self.src_path, self.destination_path)
 
 
+class FaviconWriter(AssetWriter):
+    """
+    Handles writing the favicon file to the destination directory
+    """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Initializes the FaviconWriter with the source and destination paths for the favicon
+        """
+        super().__init__(
+            settings["favicon_path"], f"{settings['build_dir']}/favicon.ico"
+        )
+
+
+class ScriptWriter(AssetWriter):
+    """
+    Handles writing all script files to the destination directory
+    """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Initializes the ScriptWriter with the source and destination paths for the scripts
+        """
+        super().__init__(
+            settings["scripts_path"], f"{settings['build_dir']}/static/scripts"
+        )
+
+
+class ImageWriter(AssetWriter):
+    """
+    Handles writing all image files to the destination directory
+    """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Initializes the ImageWriter with the source and destination paths for the images
+        """
+        super().__init__(
+            settings["images_path"], f"{settings['build_dir']}/static/images"
+        )
+
+
 class CSSWriter(AssetWriter):
     """
     Handles writing all CSS files to the destination directory as a single CSS file
     """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Initializes the CSSWriter with the source and destination paths for the stylesheets
+        """
+        super().__init__(
+            settings["styles_path"], f"{settings['build_dir']}/static/styles"
+        )
 
     def log_info(self):
         """
@@ -85,7 +137,7 @@ class AssetHandler:
     including favicon, scripts, styles, and images
     """
 
-    favicon: AssetWriter
-    scripts: AssetWriter
-    images: AssetWriter
+    favicon: FaviconWriter
+    scripts: ScriptWriter
+    images: ImageWriter
     styles: CSSWriter

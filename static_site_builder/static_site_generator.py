@@ -35,12 +35,13 @@ class StaticSiteGenerator:
         self.loader = loader
         self.asset_handler = asset_handler
         self.build_dir = template_handler.build_dir
+        self.root_path = template_handler.root_path
 
     def get_build_dir_path(self):
         """
         Constructs the absolute path of the build directory from the project root
         """
-        return os.path.join(os.environ.get("ROOT_PATH"), self.build_dir)
+        return os.path.join(self.root_path, self.build_dir)
 
     def clear_build_dir(self):
         """

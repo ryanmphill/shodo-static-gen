@@ -9,20 +9,23 @@ from jinja2 import (
     FileSystemLoader,
 )
 
+from static_site_builder.data_loader import SettingsDict
+
 
 class TemplateHandler:
     """
     Handles the loading and rendering of templates using Jinja2.
     """
 
-    def __init__(self, template_paths: list[str], build_dir="dist"):
+    def __init__(self, settings: SettingsDict):
         """
         Initialize the TemplateHandler with the paths to the template directories.
         """
         self.template_env = Environment(
-            loader=FileSystemLoader(searchpath=template_paths)
+            loader=FileSystemLoader(searchpath=settings["template_paths"])
         )
-        self.build_dir = build_dir
+        self.build_dir = settings["build_dir"]
+        self.root_path = settings["root_path"]
 
     def get_template(self, template_name):
         """
@@ -121,9 +124,7 @@ class TemplateHandler:
                         f"{self.build_dir}/{page_name}/index.html",
                         render_args,
                     )
-                path_from_root = os.path.join(
-                    os.environ.get("ROOT_PATH"), pages_src_dir + path
-                )
+                path_from_root = os.path.join(self.root_path, pages_src_dir + path)
                 # If directory, recursively create a nested route
                 if os.path.isdir(path_from_root):
                     nested_path = nested_dirs + path + "/"

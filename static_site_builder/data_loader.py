@@ -8,7 +8,25 @@ import os
 from json import load
 from abc import ABC, abstractmethod
 from io import TextIOWrapper
+from typing import TypedDict
 from markdown2 import markdown
+
+
+class SettingsDict(TypedDict):
+    """
+    Schema for settings dictionary loaded from build_settings.json
+    """
+
+    template_paths: list[str]
+    root_path: str
+    build_dir: str
+    markdown_path: str
+    json_config_path: str
+    favicon_path: str
+    scripts_path: str
+    images_path: str
+    styles_path: str
+    build_dir: str
 
 
 class DataLoader(ABC):
@@ -50,6 +68,14 @@ class MarkdownLoader(DataLoader):
     Handles the loading of markdown files as well as their conversion to html
     strings. Extends DataLoader
     """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Extends the DataLoader with the path to the markdown directory pulled from
+        the settings dictionary
+        """
+        super().__init__(settings["markdown_path"])
+        self.root_path = settings["root_path"]
 
     def list_files(self, sub_dir="partials") -> list[tuple[str]]:
         """
@@ -127,9 +153,7 @@ class MarkdownLoader(DataLoader):
 
         markdown_dirs.append(markdown_path)
         for path in os.listdir(markdown_path):
-            path_from_root = os.path.join(
-                os.environ.get("ROOT_PATH"), markdown_path + path
-            )
+            path_from_root = os.path.join(self.root_path, markdown_path + path)
             # For each directory, recursively append all a nested directories
             if os.path.isdir(path_from_root):
                 markdown_dirs = self._get_nested_markdown_dirs(
@@ -145,19 +169,25 @@ class JSONLoader(DataLoader):
     templates as dictionary render arguments
     """
 
+    def __init__(self, settings: SettingsDict):
+        """
+        Extends the DataLoader with the path to the JSON config file pulled from
+        the settings dictionary
+        """
+        super().__init__(settings["json_config_path"])
+
     def _log_info(self):
         """
         Prints a status message that JSON is being loaded
         """
         print("\033[94m" + "Loading JSON..." + "\033[0m")
 
-    def load_args(self, verbose=True):
+    def load_args(self):
         """
         Load JSON from the specified file path as a Python dict, where the key is the
         variable name in the template files, and the value is the data to be inserted.
         """
-        if verbose:
-            self._log_info()
+        self._log_info()
         with open(self.src_path, "r", encoding="utf-8") as config_file:
             config = load(config_file)
 
@@ -167,21 +197,20 @@ class JSONLoader(DataLoader):
         return {}
 
 
-class SettingsLoader(JSONLoader):
+class SettingsLoader(DataLoader):
     """
     Handles the loading of build settings, including source paths and the
     destination build directory
     """
 
-    def __init__(self):
+    def __init__(self, root_path: str):
         """
         Extends the JSONLoader with the absolute path to the build settings
         as an argument.
         """
-        super().__init__(
-            src_path=os.path.join(os.environ.get("ROOT_PATH"), "build_settings.json")
-        )
+        super().__init__(src_path=os.path.join(root_path, "build_settings.json"))
         self._data = None
+        self.root_path = root_path
 
     @property
     def data(self):
@@ -189,11 +218,28 @@ class SettingsLoader(JSONLoader):
         The loaded arguments from the build settings json config file
         """
         if self._data is None:
-            self._data = self.load_args(False)
+            self._data = self.load_args()
             self._data["template_paths"] = self.get_all_template_paths(
                 self._data["root_template_paths"]
             )
-        return self._data
+            self._data["root_path"] = self.root_path
+            self._data["build_dir"] = self._format_build_dir()
+
+        args: SettingsDict = self._data
+        return args
+
+    def load_args(self):
+        """
+        Load JSON from the specified file path as a Python dict, where the key is the
+        variable name in the template files, and the value is the data to be inserted.
+        """
+        with open(self.src_path, "r", encoding="utf-8") as settings_file:
+            settings = load(settings_file)
+
+        if isinstance(settings, dict):
+            return settings
+
+        return {}
 
     def _log_info(self):
         """
@@ -201,14 +247,14 @@ class SettingsLoader(JSONLoader):
         """
         print("\033[94m" + "Loading settings and configuration..." + "\033[0m")
 
-    def get_build_dir(self):
+    def _format_build_dir(self):
         """
         Returns the build directory from the build_settings.json with
         any trailing slashes removed
         """
-        build_dir = self.data["build_dir"]
+        build_dir = self._data["build_dir"]
         if isinstance(build_dir, str):
-            build_dir = build_dir.rstrip("/")
+            build_dir = build_dir.strip("/")
         else:
             build_dir = ""
 
@@ -227,9 +273,7 @@ class SettingsLoader(JSONLoader):
 
         template_dirs.append(template_path)
         for path in os.listdir(template_path):
-            path_from_root = os.path.join(
-                os.environ.get("ROOT_PATH"), template_path + path
-            )
+            path_from_root = os.path.join(self.root_path, template_path + path)
             # For each directory, recursively append all a nested directories
             if os.path.isdir(path_from_root):
                 template_dirs = self.get_nested_template_dirs(
