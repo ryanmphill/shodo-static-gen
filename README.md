@@ -67,7 +67,7 @@ The `layout.jinja` is just a normal jinja template, but the `{{ article }}` vari
 
 Here is an example layout template:
 
-```html
+```jinja
 <div class="container">
     <header class="page-header">
         <h1 class="page-header__title">This is the root article layout</h1>
@@ -83,7 +83,7 @@ Here is an example layout template:
 
 For rendering dynamic data, Jinja Macros can be used for looping through a passed argument. Simply use the `macro` keyword in the partial template, like the following example:
 
-```
+```jinja
 {% macro loop_template(items) -%}
     <ul>
     {%- for item in items %}
@@ -95,7 +95,7 @@ For rendering dynamic data, Jinja Macros can be used for looping through a passe
 
 Then, it can be included in the main template:
 
-```
+```jinja
 {% from 'loop_template.jinja' import loop_template as loop_template %}
     {{ loop_template(['Content', 'to', 'loop', 'through']) }}
 ```
@@ -134,3 +134,17 @@ Run `Python site_builder.py` from the main project directory when your ready to 
 Find your static site located in the `dist/` directory
 
 For development, run `Python serve.py` from the root project directory. This will build the site in the `dist` directory with the latest changes from `src` and serve it on localhost!
+
+## Project Conventions
+
+#### Jinja templates
+
+For all jinja templates, use the `.jinja` file extension. Other extensions such as `.j2` or `.jinja2` are not fully supported at this time.
+
+###### Syntax Highlighting
+If you're using VSCode, the [Better Jinja](https://marketplace.visualstudio.com/items?itemName=samuelcolvin.jinjahtml) extension is recommended for full syntax highlighting out of the box using the `.jinja` extension. Other extensions will work, although you might need to configure the settings to look for the `.jinja` extension.
+
+#### For Contributors
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+This project uses the [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter) and follows the [current style guide](https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html)
