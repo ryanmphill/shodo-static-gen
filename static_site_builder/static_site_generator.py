@@ -7,7 +7,6 @@ import os
 import shutil
 
 from .template_handler import TemplateHandler
-from .data_loader import Loader
 from .asset_writer import AssetHandler
 
 
@@ -20,7 +19,6 @@ class StaticSiteGenerator:
     def __init__(
         self,
         template_handler: TemplateHandler,
-        loader: Loader,
         asset_handler: AssetHandler,
     ):
         """
@@ -32,7 +30,6 @@ class StaticSiteGenerator:
         :param asset_handler: An instance of AssetHandler for writing static assets.
         """
         self.template_handler = template_handler
-        self.loader = loader
         self.asset_handler = asset_handler
         self.build_dir = template_handler.build_dir
         self.root_path = template_handler.root_path
@@ -72,19 +69,11 @@ class StaticSiteGenerator:
         4. Writes the favicon, index.html, and linked HTML pages.
         5. Copies scripts, assets, and combines all stylesheets into one file.
         """
-        # Load render arguments
-        render_args = {}
-        render_args.update(self.loader.markdown.load_args())
-        render_args.update(self.loader.json.load_args())
-
-        # Load markdown pages
-        md_pages = self.loader.markdown.load_pages()
-
         # Clear destination directory if exists and create new empty directory
         self.refresh_and_create_new_build_dir()
 
+        self.template_handler.write()
         self.asset_handler.favicon.write()
-        self.template_handler.write(render_args, md_pages)
         self.asset_handler.scripts.write()
         self.asset_handler.images.write()
         self.asset_handler.styles.write()
