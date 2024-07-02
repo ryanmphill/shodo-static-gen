@@ -85,7 +85,6 @@ class TemplateHandler:
 
     def _get_doc_head(
         self,
-        site_title,
         styles_link="/static/styles/main.css",
         favicon_link='<link rel="icon" type="image/x-icon" href="/favicon.ico">',
     ):
@@ -99,7 +98,7 @@ class TemplateHandler:
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{ site_title }</title>
+            <title>{ self.render_args["metadata"]["title"] }</title>
             {favicon_link}
             <link href="{styles_link}" rel="stylesheet" />
         </head>
@@ -127,7 +126,7 @@ class TemplateHandler:
         template = self.get_template(template_name)
         with open(destination_dir, "w", encoding="utf-8") as output_file:
             output_file.write(
-                self._get_doc_head(self.render_args["site_title"])
+                self._get_doc_head()
                 + template.render(self.render_args)
                 + "\n"
                 + self._get_doc_tail()

@@ -3,7 +3,6 @@ Classes defined in this module are responsible for loading data
 from files
 """
 
-from dataclasses import dataclass
 import os
 from json import load
 from abc import ABC, abstractmethod
@@ -115,8 +114,29 @@ class MarkdownLoader(DataLoader):
         for md_dir_path, md_file in self.list_files():
             md_file_path = os.path.join(md_dir_path, md_file)
             md_var_name = os.path.splitext(md_file)[0]
+            # Get the relative path from the markdown directory
+            relative_paths = md_dir_path.replace("src/theme/markdown/partials/", "")
+            # Split the relative path into a list of prefixes to append to md variable names
+            name_prefixes = [s for s in relative_paths.split("/") if s]
+            # Open and convert markdown file to html
             with open(md_file_path, "r", encoding="utf-8") as markdown_file:
-                converted_html[md_var_name] = self._convert_to_html(markdown_file)
+                if not name_prefixes:
+                    converted_html[md_var_name] = self._convert_to_html(markdown_file)
+                else:
+                    # Use nested directories as prefixes for the variable name
+                    # ex. "collections/quote.md" -> {"collections": {"quote": "<html>"}}
+                    # which will be exposed in the template as {{ collections.quote }}
+                    keychain = converted_html
+                    for prefix in name_prefixes:
+                        if prefix not in keychain:
+                            keychain[prefix] = {}
+                        keychain = keychain[prefix]
+                        if name_prefixes[-1] == prefix:
+                            if isinstance(keychain, dict):
+                                keychain[md_var_name] = self._convert_to_html(
+                                    markdown_file
+                                )
+
         return converted_html
 
     def load_pages(self) -> list[dict[str, str]]:
@@ -175,6 +195,20 @@ class JSONLoader(DataLoader):
         the settings dictionary
         """
         super().__init__(settings["json_config_path"])
+        self.root_path = settings["root_path"]
+
+    def list_files(self, sub_dir="") -> list[tuple[str]]:
+        """
+        Lists all JSON files in the root path specified during class initialization. Returns
+        list of tuple pairs packed with the directory path followed by the file name.
+        """
+        json_files = []
+        json_dirs = self._get_nested_json_dirs(os.path.join(self.src_path, sub_dir))
+        for json_dir_path in json_dirs:
+            for file in os.listdir(json_dir_path):
+                if file.endswith(".json"):
+                    json_files.append((json_dir_path, file))
+        return json_files
 
     def _log_info(self):
         """
@@ -188,13 +222,34 @@ class JSONLoader(DataLoader):
         variable name in the template files, and the value is the data to be inserted.
         """
         self._log_info()
-        with open(self.src_path, "r", encoding="utf-8") as config_file:
-            config = load(config_file)
+        loaded_args = {}
+        for json_dir_path, json_file in self.list_files():
+            json_file_path = os.path.join(json_dir_path, json_file)
+            with open(json_file_path, "r", encoding="utf-8") as json_file:
+                converted_json: dict = load(json_file)
+                loaded_args.update(converted_json)
 
-        if isinstance(config, dict):
-            return config
+        return loaded_args
 
-        return {}
+    def _get_nested_json_dirs(
+        self, json_path="src/theme/json", json_dirs=None
+    ) -> list[str]:
+        """
+        Retrieves all children directories of a parent JSON directory as a list
+        """
+        json_path = json_path.rstrip("/") + "/"
+
+        if json_dirs is None:
+            json_dirs = []
+
+        json_dirs.append(json_path)
+        for path in os.listdir(json_path):
+            path_from_root = os.path.join(self.root_path, json_path + path)
+            # For each directory, recursively append all a nested directories
+            if os.path.isdir(path_from_root):
+                json_dirs = self._get_nested_json_dirs(json_path + path, json_dirs)
+        # When no subdirectories remain, return list of JSON directories
+        return json_dirs
 
 
 class SettingsLoader(DataLoader):
@@ -291,14 +346,3 @@ class SettingsLoader(DataLoader):
             template_paths.extend(self.get_nested_template_dirs(path))
 
         return template_paths
-
-
-@dataclass
-class Loader:
-    """
-    Data class that holds logic for loading data from markdown and JSON files and
-    providing render arguments as a dictionary
-    """
-
-    markdown: MarkdownLoader
-    json: JSONLoader

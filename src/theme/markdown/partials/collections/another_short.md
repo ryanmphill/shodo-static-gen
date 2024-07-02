@@ -1,9 +1,11 @@
-## This is Another Short Article!
+### Variable Prefixes for Markdown Content
 
-It was dynamically added to the page by passing a variable to the template with the same name as the markdown file! To include short bits of markdown in your template like this, simply add the markdown file to `markdown/partials`, and the variable will be exposed to all templates. You can render it in the template using the jinja variable syntax:
+In order to avoid any naming conflicts, The articles further nested in directories within "articles/partials/" will have a variable prefix that is the accumulated names of the preceding directories in dot notation (excluding '/partials' and higher). 
+
+For example, a markdown file located in `markdown/partials/collections/quotes/my_quote.md`, will be exposed to all templates with the following variable using the jinja variable syntax:
 
 ```
-{{ name_of_markdown_file }}
+{{ collections.quotes.my_quote }}
 ```
 
 ## Article Pages
