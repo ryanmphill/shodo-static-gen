@@ -35,7 +35,7 @@ def start_server(port=3000):
     with ThreadingHTTPServer(("", port), handler) as httpd:
         print(
             "\033[96m"
-            + f"Serving HTTP on 127.0.0.1 port {port} (http://127.0.0.1:{port}/)..."
+            + f"Serving HTTP on 127.0.0.1 port {port} ( http://127.0.0.1:{port}/ )..."
             + "\033[95m"
         )
         try:
