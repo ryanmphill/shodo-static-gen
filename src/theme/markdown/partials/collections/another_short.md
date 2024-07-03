@@ -29,7 +29,7 @@ For example, to access the `title` value from `/store/config.json`:
 {
     "metadata": {
         "title": "Shodo - A Static Site Generator",
-        "description": "Shodo is a static site generator that uses Markdown and JSON files to generate a static site.",
+        "description": "Generates a static site",
         "author": "Shodo"
     }
 }
