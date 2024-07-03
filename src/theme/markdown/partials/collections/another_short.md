@@ -18,3 +18,25 @@ In addition to partial variables that can be included in templates, entire new p
 
 You can create as many css files as you'd like, and no need to import them, because they will all be compiled
 into a single css file during the build process.
+
+## Data Store
+
+For easy configuration and keeping repeated values in one place, JSON data in the `/store` directory will be passed to Jinja templates with an identical variable to the property name. Each nested object can be accessed using dot notation in the templates.
+
+For example, to access the `title` value from `/store/config.json`:
+
+```json
+{
+    "metadata": {
+        "title": "Shodo - A Static Site Generator",
+        "description": "Shodo is a static site generator that uses Markdown and JSON files to generate a static site.",
+        "author": "Shodo"
+    }
+}
+```
+
+in the template, you would use the following syntax:
+
+```
+{{ metadata.title }}
+```
