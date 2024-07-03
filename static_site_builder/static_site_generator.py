@@ -26,7 +26,6 @@ class StaticSiteGenerator:
         for generating a static site.
 
         :param template_handler: An instance of TemplateHandler for managing templates.
-        :param loader: An instance of Loader for loading markdown and JSON content.
         :param asset_handler: An instance of AssetHandler for writing static assets.
         """
         self.template_handler = template_handler
