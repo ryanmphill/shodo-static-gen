@@ -1,7 +1,7 @@
 <div class="container">
 <header class="site-header">
     <img class="site-header__icon" height="150" width="150" src="/static/images/calligraphy-icon.svg" alt="Calligraphy pen writing on scroll">
-    <h1 class="site-header__site-title">{{ site_title }}</h1>
+    <h1 class="site-header__site-title">{{ metadata.title }}</h1>
 </header>
 <main>
     <h1>{{ home_page_title }}</h1>
@@ -9,14 +9,14 @@
         {{ short }}
     </article>
     <article>
-        {{ another_short }}
+        {{ collections.another_short }}
     </article>
     <section>
         {% include 'another_template.jinja' %}
     </section>
     <section>
         {% from 'loop_template.jinja' import loop_template as loop_template %}
-        {{ loop_template(['This', 'is', 'content', 'that', 'was', 'dynamically', 'looped', 'through', 'using', 'Jinja', 'Macros!']) }}
+        {{ loop_template(list_of_words) }}
     </section>
     <section>
         <h2>JavaScript</h2>

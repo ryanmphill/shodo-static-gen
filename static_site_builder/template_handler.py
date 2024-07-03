@@ -9,7 +9,7 @@ from jinja2 import (
     FileSystemLoader,
 )
 
-from static_site_builder.data_loader import SettingsDict
+from static_site_builder.data_loader import JSONLoader, MarkdownLoader, SettingsDict
 
 
 class TemplateHandler:
@@ -17,7 +17,12 @@ class TemplateHandler:
     Handles the loading and rendering of templates using Jinja2.
     """
 
-    def __init__(self, settings: SettingsDict):
+    def __init__(
+        self,
+        settings: SettingsDict,
+        markdown_loader: MarkdownLoader,
+        json_loader: JSONLoader,
+    ):
         """
         Initialize the TemplateHandler with the paths to the template directories.
         """
@@ -26,6 +31,41 @@ class TemplateHandler:
         )
         self.build_dir = settings["build_dir"]
         self.root_path = settings["root_path"]
+        self.markdown_loader = markdown_loader
+        self.json_loader = json_loader
+        self._render_args = None
+        self._md_pages = None
+
+    @property
+    def render_args(self):
+        """
+        Getter for the render arguments
+        """
+        if self._render_args is None:
+            # Set the render arguments upon class instantiation
+            self._render_args = self.markdown_loader.load_args()
+            self._render_args.update(self.json_loader.load_args())
+
+        return self._render_args.copy()
+
+    @property
+    def md_pages(self):
+        """
+        Getter for the markdown pages
+        """
+        if self._md_pages is None:
+            # Set the markdown pages upon class instantiation
+            self._md_pages = self.markdown_loader.load_pages()
+
+        return self._md_pages.copy()
+
+    def update_render_arg(self, key, value):
+        """
+        Update a render argument with the provided key-value pair. Used for
+        setting and updating render arguments that are reused for dynamic content,
+        such as article pages.
+        """
+        self._render_args[key] = value
 
     def get_template(self, template_name):
         """
@@ -45,7 +85,6 @@ class TemplateHandler:
 
     def _get_doc_head(
         self,
-        site_title,
         styles_link="/static/styles/main.css",
         favicon_link='<link rel="icon" type="image/x-icon" href="/favicon.ico">',
     ):
@@ -59,7 +98,7 @@ class TemplateHandler:
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>{ site_title }</title>
+            <title>{ self.render_args["metadata"]["title"] }</title>
             {favicon_link}
             <link href="{styles_link}" rel="stylesheet" />
         </head>
@@ -79,9 +118,7 @@ class TemplateHandler:
         </html>
         """.strip()
 
-    def _write_html_from_template(
-        self, template_name, destination_dir, render_args: dict
-    ):
+    def _write_html_from_template(self, template_name, destination_dir):
         """
         Render a template with the provided arguments and write the output to a file.
         """
@@ -89,21 +126,21 @@ class TemplateHandler:
         template = self.get_template(template_name)
         with open(destination_dir, "w", encoding="utf-8") as output_file:
             output_file.write(
-                self._get_doc_head(render_args["site_title"])
-                + template.render(render_args)
+                self._get_doc_head()
+                + template.render(self.render_args)
                 + "\n"
                 + self._get_doc_tail()
             )
 
-    def write_home_template(self, render_args: dict):
+    def write_home_template(self):
         """
         Write the index.html file using the provided render arguments.
         """
         return self._write_html_from_template(
-            "home.jinja", f"{self.build_dir}/index.html", render_args
+            "home.jinja", f"{self.build_dir}/index.html"
         )
 
-    def write_linked_template_pages(self, render_args: dict, nested_dirs=""):
+    def write_linked_template_pages(self, nested_dirs=""):
         """
         Write HTML pages linked from the index page using the provided render arguments.
         """
@@ -120,21 +157,19 @@ class TemplateHandler:
                     if not os.path.exists(f"{self.build_dir}/{page_name}"):
                         os.makedirs(f"{self.build_dir}/{page_name}")
                     self._write_html_from_template(
-                        template_name,
-                        f"{self.build_dir}/{page_name}/index.html",
-                        render_args,
+                        template_name, f"{self.build_dir}/{page_name}/index.html"
                     )
                 path_from_root = os.path.join(self.root_path, pages_src_dir + path)
                 # If directory, recursively create a nested route
                 if os.path.isdir(path_from_root):
                     nested_path = nested_dirs + path + "/"
-                    self.write_linked_template_pages(render_args, nested_path)
+                    self.write_linked_template_pages(nested_path)
 
-    def write_article_pages(self, md_pages: list[dict[str, str]], render_args: dict):
+    def write_article_pages(self):
         """
         Writes html pages for each markdown file in the `articles` directory
         """
-        for md_page in md_pages:
+        for md_page in self.md_pages:
             # Get the layout for this template
             layout_template = self.get_md_layout_template(md_page["url_segment"])
             # Get the path
@@ -145,10 +180,8 @@ class TemplateHandler:
             )
             if not os.path.exists(build_path):
                 os.makedirs(build_path)
-            render_args["article"] = md_page["html"]
-            self._write_html_from_template(
-                layout_template, f"{build_path}/index.html", render_args
-            )
+            self.update_render_arg("article", md_page["html"])
+            self._write_html_from_template(layout_template, f"{build_path}/index.html")
 
     def get_md_layout_template(self, url_segment: str):
         """
@@ -166,10 +199,10 @@ class TemplateHandler:
         segments.pop()
         return self.get_md_layout_template("/".join(segments))
 
-    def write(self, render_args: dict, md_pages: list[dict]):
+    def write(self):
         """
         Writes the root index.html and any linked html pages using the provided render arguments.
         """
-        self.write_home_template(render_args)
-        self.write_linked_template_pages(render_args)
-        self.write_article_pages(md_pages, render_args)
+        self.write_home_template()
+        self.write_linked_template_pages()
+        self.write_article_pages()

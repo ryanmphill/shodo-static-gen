@@ -1,6 +1,6 @@
 # Shodo Static Site Generator
 
-This is a Python script I am putting together that builds a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
+This is a Python script and framework for building a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
 
 ## How it works
 
@@ -33,6 +33,16 @@ ______nested-page.jinja (template for '/nested/nested-page')
 ##### Partial markdown content to include in templates
 
 Any markdown files added to the `/markdown/partials` directory will be exposed to Jinja templates with a variable name identical to the markdown file name, minus the extension. So, the contents of `summary.md` can be passed to the Jinja template as `{{ summary }}`, where it will be converted to HTML upon running the build script.
+
+###### Prefixed variables for nested markdown directories
+
+In order to avoid any naming conflicts, The articles further nested in directories within "articles/partials/" will have a variable prefix that is the accumulated names of the preceding directories in dot notation (excluding '/partials' and higher). 
+
+For example, a markdown file located in `markdown/partials/collections/quotes/my_quote.md`, will be exposed to all templates with the following variable using the jinja variable syntax:
+
+```
+{{ collections.quotes.my_quote }}
+```
 
 ##### Generating full pages from markdown
 
@@ -111,9 +121,27 @@ Then after running the build, the HTML should look like the following:
 </ul>
 ```
 
-#### config.json
+#### JSON data in the `/store` directory
 
-Any property defined in `config.json` will automatically expose a variable with the same name to all jinja templates that has the cooresponding value of the `config.json` property.
+For easy configuration and keeping repeated values in one place, any property defined in a `.json` file within the `/store` directory will be passed to Jinja templates with an identical variable to the property name. Each nested object can be accessed using dot notation in the templates.
+
+For example, to access the `title` value from `/store/config.json`:
+
+```json
+{
+    "metadata": {
+        "title": "Shodo - A Static Site Generator",
+        "description": "Shodo is a static site generator that uses Markdown and JSON files to generate a static site.",
+        "author": "Shodo"
+    }
+}
+```
+
+in the template, you would use the following syntax:
+
+```
+{{ metadata.title }}
+```
 
 #### build_settings.json
 

@@ -6,9 +6,8 @@ Classes:
 - `TemplateHandler`: Handles the rendering of templates.
 - `DataLoader`, `MarkdownLoader`, `JSONLoader`, `SettingsLoader` : These 
    classes are responsible for loading data from various sources.
-- `FaviconWriter`, `ScriptWriter`, `ImageWriter`, `CSSWriter`: These classes handle 
+- `FaviconWriter`, `ScriptWriter`, `ImageWriter`, `CSSWriter`: These classes handle
    copying, combining, and writing of various assets.
-- `Loader`: Dataclass for holding multiple instances of DataLoader.
 - `AssetHandler`: Dataclass for holding multiple instances of AssetWriter.
 - `StaticSiteGenerator`: This class orchestrates the generation of the static site.
 
@@ -17,7 +16,7 @@ This package is used in the `site_builder.py` script to build the static site.
 """
 
 from .template_handler import TemplateHandler
-from .data_loader import DataLoader, MarkdownLoader, JSONLoader, SettingsLoader, Loader
+from .data_loader import DataLoader, MarkdownLoader, JSONLoader, SettingsLoader
 from .asset_writer import (
     FaviconWriter,
     ScriptWriter,

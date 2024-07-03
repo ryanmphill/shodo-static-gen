@@ -10,3 +10,9 @@ You can also write out code blocks in the markdown file:
 def myfunction():
     return 'Hello'
 ```
+
+It was dynamically added to the page by passing a variable to the template with the same name as the markdown file! To include short bits of markdown in your template like this, simply add the markdown file to `markdown/partials`, and the variable will be exposed to all templates. You can render it in the template using the jinja variable syntax:
+
+```
+{{ name_of_markdown_file }}
+```
