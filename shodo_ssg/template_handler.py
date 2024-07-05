@@ -9,7 +9,7 @@ from jinja2 import (
     FileSystemLoader,
 )
 
-from static_site_builder.data_loader import JSONLoader, MarkdownLoader, SettingsDict
+from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsDict
 
 
 class TemplateHandler:

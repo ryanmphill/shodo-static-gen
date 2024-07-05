@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import os
 import shutil
 
-from static_site_builder.data_loader import SettingsDict
+from shodo_ssg.data_loader import SettingsDict
 
 
 class AssetWriter:

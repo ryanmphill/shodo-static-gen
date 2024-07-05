@@ -7,18 +7,14 @@ the web server
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import os
 import sys
-from static_site_builder import SettingsLoader
-from site_builder import build_static_site
+from shodo_ssg import SettingsLoader, build_static_site
 
-
-def start_server(port=3000):
+def start_server(path_from_root: str, port=3000):
     """
     Starts a development web server using Python's http.server
     """
-    # Set the ROOT_PATH variable to the directory of this file
-    root_path = os.path.dirname(os.path.abspath(__file__))
 
-    settings = SettingsLoader(root_path)
+    settings = SettingsLoader(path_from_root)
     directory_to_serve = settings.data["build_dir"]
 
     class Handler(SimpleHTTPRequestHandler):
@@ -46,5 +42,7 @@ def start_server(port=3000):
 
 
 if __name__ == "__main__":
-    build_static_site()
-    start_server()
+    # Set the ROOT_PATH variable to the directory of this file
+    root_path = os.path.dirname(os.path.abspath(__file__))
+    build_static_site(root_path)
+    start_server(root_path)
