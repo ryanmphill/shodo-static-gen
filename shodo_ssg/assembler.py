@@ -2,6 +2,7 @@
 This module loads settings and initializes components for building a static site
 """
 
+import logging
 from shodo_ssg.asset_writer import (
     AssetHandler,
     CSSWriter,
@@ -69,6 +70,8 @@ def build_static_site(root_path: str):
     various writers for favicon, scripts, images, and CSS. It then creates a StaticSiteGenerator
     instance and calls its build method to generate the static site.
     """
+    # Set up logging configuration
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     # Load settings
     settings = load_settings(root_path)

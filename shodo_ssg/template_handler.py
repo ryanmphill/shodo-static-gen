@@ -3,6 +3,7 @@ This module is responsible for handling the template environment as well as
 rendering the Jinja2 templates as html
 """
 
+import logging
 import os
 from jinja2 import (
     Environment,
@@ -77,10 +78,8 @@ class TemplateHandler:
         """
         Prints a status update of the writing operation
         """
-        print(
-            "\033[94m"
-            + f"Writing html from {page_name} to {destination}..."
-            + "\033[0m"
+        logging.info(
+            "\033[94mWriting html from %s to %s...\033[0m", page_name, destination
         )
 
     def _get_doc_head(

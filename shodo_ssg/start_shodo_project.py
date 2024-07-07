@@ -21,11 +21,9 @@ Note:
     - If you want to start a project in the current directory, specify the project name 
     as a period '.'.
     - The template folder should exist in the same directory as this script.
-
-Author: Your Name
-Date: Today's Date
 """
 
+import logging
 import sys
 import os
 import argparse
@@ -52,11 +50,14 @@ def start_shodo_project(_argv):
         default="project_template",
     )
 
+    # Set up logging configuration
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
+
     try:
         args = parser.parse_args()
     except SystemExit:
         if len(sys.argv) < 2:
-            print(
+            logging.info(
                 "If you want to start a project in the current directory, specify with a period '.'"
             )
             sys.exit(1)
@@ -68,13 +69,13 @@ def start_shodo_project(_argv):
 
     # Ensure the template exists
     if not os.path.exists(template_dir):
-        print(f"Template '{args.template}' does not exist.")
+        logging.error("Template %s does not exist.", args.template)
         sys.exit(1)
 
     # Copy files and folders
     shutil.copytree(template_dir, full_path, dirs_exist_ok=True)
 
-    print(f"\033[92mProject created successfully at '{full_path}'.")
+    logging.info("\033[92mProject created successfully at %s.", full_path)
 
 
 if __name__ == "__main__":

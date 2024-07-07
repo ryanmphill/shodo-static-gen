@@ -3,6 +3,7 @@ Classes defined in this module are responsible for loading data
 from files
 """
 
+import logging
 import os
 from json import load
 from abc import ABC, abstractmethod
@@ -93,7 +94,7 @@ class MarkdownLoader(DataLoader):
         """
         Prints a status message that markdown files are being read and loaded
         """
-        print("\033[94m" + "Reading markdown files..." + "\033[0m")
+        logging.info("\033[94mReading markdown files...\033[0m")
 
     def _convert_to_html(self, markdown_file: TextIOWrapper) -> str:
         """
@@ -214,7 +215,7 @@ class JSONLoader(DataLoader):
         """
         Prints a status message that JSON is being loaded
         """
-        print("\033[94m" + "Loading JSON..." + "\033[0m")
+        logging.info("\033[94mLoading JSON...\033[0m")
 
     def load_args(self):
         """
@@ -300,7 +301,7 @@ class SettingsLoader(DataLoader):
         """
         Prints a status message that JSON settings are being loaded
         """
-        print("\033[94m" + "Loading settings and configuration..." + "\033[0m")
+        logging.info("\033[94mLoading settings and configuration...\033[0m")
 
     def _format_build_dir(self):
         """
