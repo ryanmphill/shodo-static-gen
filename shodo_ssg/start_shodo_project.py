@@ -6,7 +6,7 @@ It creates a new project directory with the specified name and copies the files 
 template directory into it.
 
 Usage:
-    python start_shodo_project.py <project_name> [-t <template_folder>]
+    start-shodo-project <project_name> [-t <template_folder>]
 
 Arguments:
     project_name (str): The name of the project. If not provided, the default name is 
@@ -15,7 +15,8 @@ Arguments:
     folder is 'project_template'.
 
 Example:
-    python start_shodo_project.py my_project -t my_template
+    pip install shodo-ssg
+    start-shodo-project my_project -t my_template
 
 Note:
     - If you want to start a project in the current directory, specify the project name 
@@ -30,11 +31,10 @@ import argparse
 import shutil
 
 # Globals
-cwd = os.getcwd()
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-def start_shodo_project(_argv):
+def start_shodo_project():
     """
     Main entry point for the script to scaffold a new static site project.
     """
@@ -51,7 +51,7 @@ def start_shodo_project(_argv):
     )
 
     # Set up logging configuration
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     try:
         args = parser.parse_args()
@@ -64,7 +64,7 @@ def start_shodo_project(_argv):
 
     # Variables
     project_name = args.project_name
-    full_path = os.path.join(cwd, project_name)
+    full_path = os.path.join(os.getcwd(), project_name)
     template_dir = os.path.join(script_dir, args.template)
 
     # Ensure the template exists
@@ -79,4 +79,4 @@ def start_shodo_project(_argv):
 
 
 if __name__ == "__main__":
-    start_shodo_project(sys.argv)
+    start_shodo_project()
