@@ -29,9 +29,5 @@ homepage = "https://github.com/ryanmphill/shodo-static-gen"
 [project.scripts]
 start-shodo-project = "shodo_ssg:start_shodo_project"
 
-[tool.setuptools]
-packages = ["shodo_ssg"]
-include_package_data = true
-
-[tool.setuptools.package_data]
-"shodo_ssg" = ["project_template/**/*"]
+[tool.setuptools.package-data]
+shodo_ssg = ["project_template/**/*"]
