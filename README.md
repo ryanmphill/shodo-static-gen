@@ -151,11 +151,49 @@ NOTE: _Any path included in `root_template_paths` will have all of its children 
 
 ## Getting Started
 
-Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
+### Installing from Github via pip
 
-Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
+1. Create a new project directory and start a virtual environment using your preferred method
 
-Upon successful install, davigate to an entirely separate directory and run 
+2. Install the `shodo_ssg` package by running the command:
+
+```bash
+pip install git+https://github.com/ryanmphill/shodo-static-gen.git
+```
+
+3. Once the package is installed, you can scaffold a new project using the command
+
+```bash
+start-shodo-project <name of project directory>
+```
+
+To create the project in the current directory, run
+
+```bash
+start-shodo-project .
+```
+
+4. Build the starter site and serve it to localhost by running the following command from the root directory of the project:
+
+```bash
+python3 serve.py
+```
+
+You should now be able to view the site on localhost and can start by making changes to `home.jinja`. When you simply want to build the static site, run the following command from the root directory:
+
+```bash
+python3 site_builder.py
+```
+
+and you can find your static site located in the `dist/` directory
+
+### Pulling down the repository and installing locally
+
+1. Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
+
+2. Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
+
+3. Upon successful install, navigate to an entirely separate directory and run 
 
 ```bash
 start-shodo-project <name of new project directory>
@@ -165,7 +203,7 @@ Upon success, a new starter project template should have been set up in the spec
 
 Start editing by making changes to `src/theme/views/home.jinja`
 
-Run `Python site_builder.py` from the main project directory when your ready to generate the site
+5. Run `Python site_builder.py` from the main project directory when your ready to generate the site
 
 Find your static site located in the `dist/` directory
 
