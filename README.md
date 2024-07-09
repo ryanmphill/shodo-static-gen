@@ -151,11 +151,19 @@ NOTE: _Any path included in `root_template_paths` will have all of its children 
 
 ## Getting Started
 
-Make sure you have `pipenv` installed
+Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
 
-Pull down the repository, run `pipenv shell`
+Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
 
-Start making changes to `src/theme/views/home.jinja`
+Upon successful install, davigate to an entirely separate directory and run 
+
+```bash
+start-shodo-project <name of new project directory>
+```
+
+Upon success, a new starter project template should have been set up in the specified directory
+
+Start editing by making changes to `src/theme/views/home.jinja`
 
 Run `Python site_builder.py` from the main project directory when your ready to generate the site
 
