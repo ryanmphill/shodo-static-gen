@@ -27,4 +27,4 @@ dependencies = [
 homepage = "https://github.com/ryanmphill/shodo-static-gen"
 
 [project.scripts]
-start-shodo-project = "shodo_ssg:start-shodo-project"
+start-shodo-project = "shodo_ssg:start_shodo_project"
