@@ -1,25 +1,24 @@
-"""
-This module script is similar to running `python3 -m http.server --bind 127.0.0.1 3000 -d dist`
-from the command line, but automatically runs the build script prior to starting up
-the web server
+""" 
+This module contains the code to start a development server using Python's http.server module. 
+It serves the static files from the build output directory of the project. 
 """
 
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-import os
+import logging
 import sys
-from static_site_builder import SettingsLoader
-from site_builder import build_static_site
+from shodo_ssg import SettingsLoader
 
 
-def start_server(port=3000):
+def start_server(path_from_root: str, port=3000):
     """
     Starts a development web server using Python's http.server
     """
-    # Set the ROOT_PATH variable to the directory of this file
-    root_path = os.path.dirname(os.path.abspath(__file__))
 
-    settings = SettingsLoader(root_path)
+    settings = SettingsLoader(path_from_root)
     directory_to_serve = settings.data["build_dir"]
+
+    # Set up logging configuration
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     class Handler(SimpleHTTPRequestHandler):
         """
@@ -33,18 +32,13 @@ def start_server(port=3000):
 
     # Create the server
     with ThreadingHTTPServer(("", port), handler) as httpd:
-        print(
-            "\033[96m"
-            + f"Serving HTTP on 127.0.0.1 port {port} ( http://127.0.0.1:{port}/ )..."
-            + "\033[95m"
+        logging.info(
+            "\033[96mServing HTTP on 127.0.0.1 port %s ( http://127.0.0.1:%s/ )...\033[95m",
+            port,
+            port,
         )
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:  # ^C to stop server, triggering __exit__ method
             print("\n" + "\033[96m" + "Gracefully shutting down..." + "\033[0m")
             sys.exit(0)  # Exit the program with a successful status code
-
-
-if __name__ == "__main__":
-    build_static_site()
-    start_server()

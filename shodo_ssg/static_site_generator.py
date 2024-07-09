@@ -3,6 +3,7 @@ This module combines all needed components to render templates and static assets
 the destination directory
 """
 
+import logging
 import os
 import shutil
 
@@ -76,4 +77,4 @@ class StaticSiteGenerator:
         self.asset_handler.scripts.write()
         self.asset_handler.images.write()
         self.asset_handler.styles.write()
-        print("\033[92m" + "Site build successfully completed!" + "\033[0m")
+        logging.info("\033[92mSite build successfully completed!\033[0m")

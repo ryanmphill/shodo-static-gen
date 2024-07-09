@@ -4,10 +4,11 @@ styles, scripts, and images to the destination build directory
 """
 
 from dataclasses import dataclass
+import logging
 import os
 import shutil
 
-from static_site_builder.data_loader import SettingsDict
+from shodo_ssg.data_loader import SettingsDict
 
 
 class AssetWriter:
@@ -23,10 +24,10 @@ class AssetWriter:
         """
         Prints a status message that the file writing operation is taking place
         """
-        print(
-            "\033[94m"
-            + f"Copying contents from {self.src_path} to {self.destination_path}..."
-            + "\033[0m"
+        logging.info(
+            "\033[94mCopying contents from %s to %s...\033[0m",
+            self.src_path,
+            self.destination_path,
         )
 
     def write(self):
@@ -100,11 +101,10 @@ class CSSWriter(AssetWriter):
         """
         Prints a status message that the css file writing operation is taking place
         """
-        print(
-            "\033[94m"
-            + f"Combining all stylesheets from {self.src_path} "
-            + f"to {self.destination_path.rstrip('/')}/main.css..."
-            + "\033[0m"
+        logging.info(
+            "\033[94mCombining all stylesheets from %s to %s/main.css...\033[0m",
+            self.src_path,
+            self.destination_path.rstrip("/"),
         )
 
     def write(self):

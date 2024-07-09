@@ -1,21 +1,18 @@
 """
-This module builds a static site in the destination directory from jinja2
-templates and all static assets
+This module loads settings and initializes components for building a static site
 """
 
-import os
-from static_site_builder import (
-    TemplateHandler,
-    MarkdownLoader,
-    JSONLoader,
-    SettingsLoader,
-    FaviconWriter,
-    ScriptWriter,
-    ImageWriter,
-    CSSWriter,
+import logging
+from shodo_ssg.asset_writer import (
     AssetHandler,
-    StaticSiteGenerator,
+    CSSWriter,
+    FaviconWriter,
+    ImageWriter,
+    ScriptWriter,
 )
+from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsLoader
+from shodo_ssg.static_site_generator import StaticSiteGenerator
+from shodo_ssg.template_handler import TemplateHandler
 
 
 def load_settings(root_path: str):
@@ -65,8 +62,7 @@ def generate_site(template_handler: TemplateHandler, asset_handler: AssetHandler
     site_generator = StaticSiteGenerator(template_handler, asset_handler)
     site_generator.build()
 
-
-def build_static_site():
+def build_static_site(root_path: str):
     """
     Builds a static site by initializing the necessary components and calling the build method.
 
@@ -74,8 +70,8 @@ def build_static_site():
     various writers for favicon, scripts, images, and CSS. It then creates a StaticSiteGenerator
     instance and calls its build method to generate the static site.
     """
-    # Set the ROOT_PATH variable to the directory of this file
-    root_path = os.path.dirname(os.path.abspath(__file__))
+    # Set up logging configuration
+    logging.basicConfig(level=logging.INFO, format='%(message)s')
 
     # Load settings
     settings = load_settings(root_path)
@@ -85,7 +81,3 @@ def build_static_site():
 
     # Build the static site
     generate_site(template_handler, asset_handler)
-
-
-if __name__ == "__main__":
-    build_static_site()
