@@ -2,6 +2,66 @@
 
 This is a Python script and framework for building a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
 
+## Getting Started
+
+### Installing from Github via pip
+
+1. Create a new project directory and start a virtual environment using your preferred method
+
+2. Install the `shodo_ssg` package by running the command:
+
+```bash
+pip install git+https://github.com/ryanmphill/shodo-static-gen.git
+```
+
+3. Once the package is installed, you can scaffold a new project using the command
+
+```bash
+start-shodo-project <name of project directory>
+```
+
+To create the project in the current directory, run
+
+```bash
+start-shodo-project .
+```
+
+4. Build the starter site and serve it to localhost by running the following command from the root directory of the project:
+
+```bash
+python3 serve.py
+```
+
+You should now be able to view the site on localhost and can start by making changes to `home.jinja`. When you simply want to build the static site, run the following command from the root directory:
+
+```bash
+python3 site_builder.py
+```
+
+and you can find your static site located in the `dist/` directory
+
+### Pulling down the repository and installing locally
+
+1. Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
+
+2. Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
+
+3. Upon successful install, navigate to an entirely separate directory and run 
+
+```bash
+start-shodo-project <name of new project directory>
+```
+
+Upon success, a new starter project template should have been set up in the specified directory
+
+Start editing by making changes to `src/theme/views/home.jinja`
+
+5. Run `Python site_builder.py` from the main project directory when your ready to generate the site
+
+Find your static site located in the `dist/` directory
+
+For development, run `Python serve.py` from the root project directory. This will build the site in the `dist` directory with the latest changes from `src` and serve it on localhost!
+
 ## How it works
 
 First, there is the main home page template located at `src/theme/views/home.jinja` that can render partial sub-views, which can either be other Jinja2 templates located in `src/theme/views/partials`, or markdown files located in `src/theme/markdown`.
@@ -148,66 +208,6 @@ in the template, you would use the following syntax:
 This is where all source paths and project settings are defined.
 
 NOTE: _Any path included in `root_template_paths` will have all of its children directories recursively added to the search path for Jinja2, so only top level paths should be included in the settings. In most cases, `"root_template_paths": [ "src/theme/views/" ]` should suffice, but it would be possible to add another path to `src/theme/assets/images` for example if you wanted to use the templates for working with an SVG but still wanted to maintain separation of concerns._
-
-## Getting Started
-
-### Installing from Github via pip
-
-1. Create a new project directory and start a virtual environment using your preferred method
-
-2. Install the `shodo_ssg` package by running the command:
-
-```bash
-pip install git+https://github.com/ryanmphill/shodo-static-gen.git
-```
-
-3. Once the package is installed, you can scaffold a new project using the command
-
-```bash
-start-shodo-project <name of project directory>
-```
-
-To create the project in the current directory, run
-
-```bash
-start-shodo-project .
-```
-
-4. Build the starter site and serve it to localhost by running the following command from the root directory of the project:
-
-```bash
-python3 serve.py
-```
-
-You should now be able to view the site on localhost and can start by making changes to `home.jinja`. When you simply want to build the static site, run the following command from the root directory:
-
-```bash
-python3 site_builder.py
-```
-
-and you can find your static site located in the `dist/` directory
-
-### Pulling down the repository and installing locally
-
-1. Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
-
-2. Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
-
-3. Upon successful install, navigate to an entirely separate directory and run 
-
-```bash
-start-shodo-project <name of new project directory>
-```
-
-Upon success, a new starter project template should have been set up in the specified directory
-
-Start editing by making changes to `src/theme/views/home.jinja`
-
-5. Run `Python site_builder.py` from the main project directory when your ready to generate the site
-
-Find your static site located in the `dist/` directory
-
-For development, run `Python serve.py` from the root project directory. This will build the site in the `dist` directory with the latest changes from `src` and serve it on localhost!
 
 ## Project Conventions
 
