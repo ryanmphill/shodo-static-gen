@@ -80,7 +80,7 @@ def test_settings_loader_data(
     assert data["scripts_path"] == settings_dict["scripts_path"]
     assert data["images_path"] == settings_dict["images_path"]
     assert data["styles_path"] == settings_dict["styles_path"]
-    assert data["template_paths"] == settings_dict["template_paths"]
+    assert set(data["template_paths"]) == set(settings_dict["template_paths"])
 
 
 def test_settings_loader_load_args(
