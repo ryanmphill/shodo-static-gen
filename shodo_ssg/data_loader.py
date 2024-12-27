@@ -115,8 +115,8 @@ class MarkdownLoader(DataLoader):
         for md_dir_path, md_file in self.list_files():
             md_file_path = os.path.join(md_dir_path, md_file)
             md_var_name = os.path.splitext(md_file)[0]
-            # Get the relative path from the markdown directory
-            relative_paths = md_dir_path.replace("src/theme/markdown/partials/", "")
+            # Remove everything before "src/theme/markdown/partials/" to get the relative path
+            relative_paths = md_dir_path.split("src/theme/markdown/partials/")[-1]
             # Split the relative path into a list of prefixes to append to md variable names
             name_prefixes = [s for s in relative_paths.split("/") if s]
             # Open and convert markdown file to html
@@ -156,7 +156,7 @@ class MarkdownLoader(DataLoader):
             md_file_path = os.path.join(md_dir_path, md_file)
             with open(md_file_path, "r", encoding="utf-8") as markdown_file:
                 page["html"] = self._convert_to_html(markdown_file)
-            page["url_segment"] = md_dir_path.replace("src/theme/markdown/articles", "")
+            page["url_segment"] = md_dir_path.split("src/theme/markdown/articles")[-1]
             page["name"] = os.path.splitext(md_file)[0]
             markdown_pages.append(page)
         return markdown_pages
@@ -310,7 +310,7 @@ class SettingsLoader(DataLoader):
         """
         build_dir = self._data["build_dir"]
         if isinstance(build_dir, str):
-            build_dir = build_dir.strip("/")
+            build_dir = os.path.abspath(build_dir.rstrip("/"))
         else:
             build_dir = ""
 

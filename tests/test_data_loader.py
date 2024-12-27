@@ -73,7 +73,9 @@ def test_settings_loader_data(
     data = loader.data
 
     assert isinstance(data, dict)
-    assert data["build_dir"] == settings_dict["build_dir"].strip("/")
+    assert os.path.abspath(data["build_dir"]) == os.path.abspath(
+        settings_dict["build_dir"]
+    )
     assert data["markdown_path"] == settings_dict["markdown_path"]
     assert data["json_config_path"] == settings_dict["json_config_path"]
     assert data["favicon_path"] == settings_dict["favicon_path"]
