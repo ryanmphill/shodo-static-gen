@@ -1,19 +1,7 @@
 """Tests for the template_handler module."""
 
 import os
-import pytest
 from shodo_ssg.template_handler import TemplateHandler
-from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsDict
-
-
-@pytest.fixture
-def template_handler_dependencies(settings_dict):
-    """
-    Create the dependencies for the TemplateHandler class.
-    """
-    markdown_loader = MarkdownLoader(settings_dict)
-    json_loader = JSONLoader(settings_dict)
-    return SettingsDict(settings_dict), markdown_loader, json_loader
 
 
 def test_template_handler_init(

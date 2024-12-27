@@ -7,6 +7,8 @@ import pytest
 
 from shodo_ssg.data_loader import (
     SettingsDict,
+    MarkdownLoader,
+    JSONLoader,
 )
 
 
@@ -78,6 +80,18 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
             "styles_path": os.path.join(temp_project_path, "src/theme/static/styles"),
         }
     )
+
+
+@pytest.fixture
+def template_handler_dependencies(
+    settings_dict,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the TemplateHandler class.
+    """
+    markdown_loader = MarkdownLoader(settings_dict)
+    json_loader = JSONLoader(settings_dict)
+    return SettingsDict(settings_dict), markdown_loader, json_loader
 
 
 def create_test_build_settings_from_temp_path(temp_path):
