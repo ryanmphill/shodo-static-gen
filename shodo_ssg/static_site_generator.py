@@ -36,8 +36,12 @@ class StaticSiteGenerator:
 
     def get_build_dir_path(self):
         """
-        Constructs the absolute path of the build directory from the project root
+        Returns the absolute path to the build directory. If the build directory is
+        already an absolute path, it is returned as is.
         """
+        if os.path.isabs(self.build_dir):
+            return self.build_dir
+
         return os.path.join(self.root_path, self.build_dir)
 
     def clear_build_dir(self):

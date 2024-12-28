@@ -23,6 +23,9 @@ dependencies = [
     "markupsafe>=2.1.5",
 ]
 
+[project.optional-dependencies]
+dev = ["black", "pytest"]
+
 [project.urls]
 homepage = "https://github.com/ryanmphill/shodo-static-gen"
 

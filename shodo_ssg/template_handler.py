@@ -66,6 +66,8 @@ class TemplateHandler:
         setting and updating render arguments that are reused for dynamic content,
         such as article pages.
         """
+        if self._render_args is None:
+            self._render_args = self.render_args
         self._render_args[key] = value
 
     def get_template(self, template_name):
@@ -143,7 +145,8 @@ class TemplateHandler:
         """
         Write HTML pages linked from the index page using the provided render arguments.
         """
-        pages_src_dir = "src/theme/views/pages/" + nested_dirs
+        src_path = os.path.join(self.root_path, "src/theme/views/pages/")
+        pages_src_dir = "/" + os.path.join(src_path, nested_dirs).strip("/") + "/"
         if os.path.exists(pages_src_dir) and os.listdir(pages_src_dir):
             for path in os.listdir(pages_src_dir):
                 if (
@@ -173,7 +176,7 @@ class TemplateHandler:
             layout_template = self.get_md_layout_template(md_page["url_segment"])
             # Get the path
             build_path = os.path.join(
-                self.build_dir.strip("/"),
+                self.build_dir,
                 md_page["url_segment"].strip("/"),
                 md_page["name"].strip("/"),
             )
@@ -192,7 +195,8 @@ class TemplateHandler:
         if not url_segment:
             return "articles/layout.jinja"
         template_path = os.path.join("articles", url_segment.strip("/"), "layout.jinja")
-        if os.path.exists(f"src/theme/views/{template_path}"):
+        src_view_path = "/" + os.path.join(self.root_path, "src/theme/views/").strip("/")
+        if os.path.exists(f"{src_view_path}/{template_path}"):
             return template_path
         segments = url_segment.strip("/").split("/")
         segments.pop()

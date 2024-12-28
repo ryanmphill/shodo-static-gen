@@ -1,3 +1,7 @@
+ <p align="right">
+ <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/ryanmphill/shodo-static-gen/python-package.yml?label=Tests">
+</p>
+
 # Shodo Static Site Generator
 
 This is a Python script and framework for building a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
