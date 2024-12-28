@@ -11,6 +11,16 @@ from shodo_ssg.data_loader import (
     JSONLoader,
 )
 
+from shodo_ssg.template_handler import TemplateHandler
+
+from shodo_ssg.asset_writer import (
+    FaviconWriter,
+    ScriptWriter,
+    ImageWriter,
+    CSSWriter,
+    AssetHandler,
+)
+
 
 @pytest.fixture
 def temp_project_path(tmp_path):
@@ -92,6 +102,25 @@ def template_handler_dependencies(
     markdown_loader = MarkdownLoader(settings_dict)
     json_loader = JSONLoader(settings_dict)
     return SettingsDict(settings_dict), markdown_loader, json_loader
+
+
+@pytest.fixture
+def static_site_generator_deps(
+    template_handler_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the StaticSiteGenerator class.
+    """
+    settings, markdown_loader, json_loader = template_handler_dependencies
+    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    favicon_writer = FaviconWriter(settings)
+    script_writer = ScriptWriter(settings)
+    image_writer = ImageWriter(settings)
+    css_writer = CSSWriter(settings)
+    asset_handler = AssetHandler(
+        favicon_writer, script_writer, image_writer, css_writer
+    )
+    return template_handler, asset_handler
 
 
 def create_test_build_settings_from_temp_path(temp_path):
