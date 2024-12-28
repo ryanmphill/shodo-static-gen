@@ -2,6 +2,7 @@
 
 import os
 from shodo_ssg.template_handler import TemplateHandler
+from tests.build_validation import get_linked_page_relative_build_paths
 
 
 def test_template_handler_init(
@@ -267,30 +268,3 @@ def test_template_handler_write(
         assert page_contents
         assert "<!DOCTYPE html>" in page_contents
         assert md_page["html"] in page_contents
-
-
-def get_linked_page_relative_build_paths(template_paths: list[str]):
-    """Returns the expected relative paths to the linked template pages in the build directory"""
-    # Get the source paths for the linked page directories
-    linked_page_dirs: list[str] = []
-    for path in template_paths:
-        if "src/theme/views/pages/" in path:
-            linked_page_dirs.append(path)
-    # Get the source paths for the linked page template files
-    linked_page_paths = []
-    for path in linked_page_dirs:
-        # get the file in the directory
-        for file in os.listdir(path):
-            if (
-                file.endswith(".jinja")
-                or file.endswith(".j2")
-                or file.endswith(".jinja2")
-            ):
-                relative_path = (
-                    path.split("src/theme/views/pages/")[-1].strip("/")
-                    + "/"
-                    + os.path.splitext(file)[0]
-                )
-                linked_page_paths.append(relative_path.strip("/"))
-
-    return linked_page_paths
