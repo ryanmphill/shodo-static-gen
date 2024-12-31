@@ -213,7 +213,7 @@ NOTE: _Any path included in `root_template_paths` will have all of its children 
 ## Deploy to Netlify
 1. Allow Netlify to install the project dependencies
 
-If you are using pipenv, Netflify will install dependencies directly from the `pipfile`. Otherwise, you will need to run `pip freeze > requirements.txt` to allow the dependencies to be installed via pip.
+If you are using pipenv, Netflify will install dependencies directly from the `pipfile`. Otherwise, you will need to generate a `requirements.txt` file via `pip freeze > requirements.txt`, `poetry export --format=requirements.txt > requirements.txt`, `uv pip compile pyproject.toml -o requirements.txt`, or similar to allow the dependencies to be installed via pip.
 
 ### pipenv
 
@@ -230,7 +230,7 @@ If you installed the project via `pipenv install`, this was already done and you
 
 ### pip
 
-If using pip, after running `pip freeze > requirements.txt`, your `requirements.txt` should look similar to this:
+If using pip, after generating your `requirements.txt`, the file should look similar to this:
 
 ```py
 Jinja2==3.1.5
