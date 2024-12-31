@@ -18,7 +18,12 @@ There is no shortage of options out there for building websites and apps, but th
 2. Install the `shodo_ssg` package by running the command:
 
 ```bash
-pip install git+https://github.com/ryanmphill/shodo-static-gen.git
+pip install git+https://github.com/ryanmphill/shodo-static-gen.git@main#egg=shodo_ssg
+```
+If using pipenv:
+
+```bash
+pipenv install git+https://github.com/ryanmphill/shodo-static-gen.git@main#egg=shodo_ssg
 ```
 
 3. Once the package is installed, you can scaffold a new project using the command
