@@ -4,7 +4,10 @@
 
 # Shodo Static Site Generator
 
-This is a Python script and framework for building a static site from markdown, Jinja2 templates, and static assets (CSS, JavaScript, images, etc). Edit your site in the `src` directory, and access the build in the `dist` directory!
+Shodo is a framework for rapidly building a static site from markdown files, json, and Jinja templates. Simply make changes to your site in the `src` directory, run the build command, and access the build in the `dist` directory. [Easily deploy to Netlify](https://github.com/ryanmphill/shodo-test-site) in just a few clicks.
+
+## Why Shodo?
+There is no shortage of options out there for building websites and apps, but they can quickly feel overcomplicated when all you need is a simple website with a few reusable components. The goal of Shodo is to make publishing content to the web as simple and elegant as possible for developers, whether it's a personal blog, a portfolio, documentation, or a professional marketing site. 
 
 ## Getting Started
 
