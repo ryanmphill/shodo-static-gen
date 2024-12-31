@@ -1,4 +1,5 @@
  <p align="right">
+ <img alt="Netlify Status" src="https://api.netlify.com/api/v1/badges/1ed945fb-7aa0-4ebd-89c0-45450ead70aa/deploy-status">
  <img alt="GitHub Pipenv locked Python version" src="https://img.shields.io/github/pipenv/locked/python-version/ryanmphill/shodo-static-gen">
  <img alt="GitHub License" src="https://img.shields.io/github/license/ryanmphill/shodo-static-gen?color=purple">
  <img alt="GitHub Actions Workflow Status" src="https://img.shields.io/github/actions/workflow/status/ryanmphill/shodo-static-gen/python-package.yml?label=Tests">
