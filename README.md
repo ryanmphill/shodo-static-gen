@@ -11,19 +11,30 @@ There is no shortage of options out there for building websites and apps, but th
 
 ## Getting Started
 
-### Installing from Github via pip
+### Installing the package
 
 1. Create a new project directory and start a virtual environment using your preferred method
 
-2. Install the `shodo_ssg` package by running the command:
+2. Install the `shodo_ssg` package by running one of the following commands:
 
+**Via pip**:
 ```bash
 pip install git+https://github.com/ryanmphill/shodo-static-gen.git@main#egg=shodo_ssg
 ```
-If using pipenv:
 
+**Via pipenv**:
 ```bash
 pipenv install git+https://github.com/ryanmphill/shodo-static-gen.git@main#egg=shodo_ssg
+```
+
+**Via Poetry**:
+```bash
+poetry add git+https://github.com/ryanmphill/shodo-static-gen.git@main#egg=shodo_ssg
+```
+
+**Via uv**:
+```bash
+uv pip install "shodo_ssg @ git+https://github.com/ryanmphill/shodo-static-gen.git@main"
 ```
 
 3. Once the package is installed, you can scaffold a new project using the command
@@ -51,28 +62,6 @@ python3 site_builder.py
 ```
 
 and you can find your static site located in the `dist/` directory
-
-### Pulling down the repository and installing locally
-
-1. Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
-
-2. Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
-
-3. Upon successful install, navigate to an entirely separate directory and run 
-
-```bash
-start-shodo-project <name of new project directory>
-```
-
-Upon success, a new starter project template should have been set up in the specified directory
-
-Start editing by making changes to `src/theme/views/home.jinja`
-
-5. Run `Python site_builder.py` from the main project directory when your ready to generate the site
-
-Find your static site located in the `dist/` directory
-
-For development, run `Python serve.py` from the root project directory. This will build the site in the `dist` directory with the latest changes from `src` and serve it on localhost!
 
 ## How it works
 
@@ -221,6 +210,44 @@ This is where all source paths and project settings are defined.
 
 NOTE: _Any path included in `root_template_paths` will have all of its children directories recursively added to the search path for Jinja2, so only top level paths should be included in the settings. In most cases, `"root_template_paths": [ "src/theme/views/" ]` should suffice, but it would be possible to add another path to `src/theme/assets/images` for example if you wanted to use the templates for working with an SVG but still wanted to maintain separation of concerns._
 
+## Deploy to Netlify
+1. Allow Netlify to install the project dependencies
+
+If you are using pipenv, Netflify will install dependencies directly from the `pipfile`. Otherwise, you will need to run `pip freeze > requirements.txt` to allow the dependencies to be installed via pip.
+
+### pipenv
+
+If using pipenv, your `pipfile` dependency should look something like this:
+
+```py
+[packages]
+shodo_ssg = {ref = "<specific-commit-hash-or-branch-goes-here>", git = "https://github.com/ryanmphill/shodo-static-gen.git"}
+```
+
+If you haven't already, generate the lock file via pipenv lock, then go ahead and verify the package is installable with the command pipenv sync.
+
+If you installed the project via `pipenv install`, this was already done and you can move on to the next step
+
+### pip
+
+If using pip, after running `pip freeze > requirements.txt`, your `requirements.txt` should look similar to this:
+
+```py
+Jinja2==3.1.5
+markdown2==2.5.2
+MarkupSafe==3.0.2
+shodo_ssg @ git+https://github.com/ryanmphill/shodo-static-gen.git@<commit-hash>
+```
+
+2. Create a new repository on GitHub and push the Shodo project up to it
+3. Now, we have everything we will need to build and deploy the static site on Netlify. We will have to make a few specifications since Netlify won't be able to autodetect everything about the build configuration
+4. Choose "Add new site" on Netlify, and select the repository with your site
+5. For the `build command`, specify `python site_builder.py`
+6. Luckily, Netlify supports Python and will be able to automatically install dependencies from either the pipfile or requirements.txt. The only extra step we need to take is to change the default python version from 3.8 to 3.9. To do this, go to the environment variables section and add `PYTHON_VERSION` for the variable name, and `3.9` for the value.
+7. Now click to deploy the site. After around a minute, verify that the build was successful, and you should be able to view the deployed site!
+
+Reference: [Netlify Python Documentation](https://docs.netlify.com/configure-builds/manage-dependencies/#python)
+
 ## Project Conventions
 
 #### Jinja templates
@@ -234,3 +261,25 @@ If you're using VSCode, the [Better Jinja](https://marketplace.visualstudio.com/
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 This project uses the [Black Formatter](https://marketplace.visualstudio.com/items?itemName=ms-python.black-formatter) and follows the [current style guide](https://black.readthedocs.io/en/stable/the_black_code_style/current_style.html)
+
+##### Pulling down the repository and installing locally
+
+1. Start up a virtual environment and install the dependencies using your preferred method after pulling down the repository
+
+2. Once your virtual environment is activated, in the root of the project directory run `pip install -e .` (Don't forget the `.`)
+
+3. Upon successful install, navigate to an entirely separate directory and run 
+
+```bash
+start-shodo-project <name of new project directory>
+```
+
+Upon success, a new starter project template should have been set up in the specified directory
+
+Start editing by making changes to `src/theme/views/home.jinja`
+
+5. Run `Python site_builder.py` from the main project directory when your ready to generate the site
+
+Find your static site located in the `dist/` directory
+
+For development, run `Python serve.py` from the root project directory. This will build the site in the `dist` directory with the latest changes from `src` and serve it on localhost.
