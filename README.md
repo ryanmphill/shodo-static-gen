@@ -132,12 +132,12 @@ ______layout.jinja (default root layout for all markdown 'articles')
 ______blog/
 ________layout.jinja (Maps to markdown/articles/blog, overwrites root layout)
 ________updates/
-__________layout.jinja (Maps to markdown/../updates, overwrites other previous layouts in tree)
+__________layout.jinja (Maps to markdown/articles/blog/updates, overwrites other previous layouts in tree)
 ```
 
 ###### layout.jinja
 
-The `layout.jinja` is just a normal jinja template, but the `{{ article }}` variable has been reserved as a `children` variable for passing in the content from each page. Simply define whatever repeated layout you would like to wrap the `{{ article }}` content, such as a header and footer.
+The `layout.jinja` is just a normal jinja template, but the `{{ article }}` variable has been reserved for passing in the content from each file in `markdown/articles`. Simply define whatever repeated layout you would like to wrap the `{{ article }}` content, such as a header and footer.
 
 Here is an example layout template:
 
@@ -153,9 +153,9 @@ Here is an example layout template:
 </div>
 ```
 
-#### Dynamic data
+#### Loop through content
 
-For rendering dynamic data, Jinja Macros can be used for looping through a passed argument. Simply use the `macro` keyword in the partial template, like the following example:
+For dynamically rendering lists of content, Jinja Macros can be used to build components for looping through a passed argument. Simply use the `macro` keyword in the partial template, like the following example:
 
 ```jinja
 {% macro loop_template(items) -%}
