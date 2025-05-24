@@ -5,7 +5,7 @@ from files
 
 import logging
 import os
-from json import load
+from json import load, loads
 from abc import ABC, abstractmethod
 from io import TextIOWrapper
 from typing import TypedDict
@@ -146,6 +146,7 @@ class MarkdownLoader(DataLoader):
         as a separate page. Returns list of dictionaries with the following
         key/value pairs:
             `"html"`: The full converted html string,
+            `path`: The path to the markdown file from the src directory,
             `"url_segment"`: The path to the markdown file from the markdown/articles directory,
                             used for matching a layout template to the `.md` file
             `"name"`: The name of the file, minus the extension
@@ -156,6 +157,7 @@ class MarkdownLoader(DataLoader):
             md_file_path = os.path.join(md_dir_path, md_file)
             with open(md_file_path, "r", encoding="utf-8") as markdown_file:
                 page["html"] = self._convert_to_html(markdown_file)
+            page["path"] = md_file_path
             page["url_segment"] = md_dir_path.split("src/theme/markdown/articles")[-1]
             page["name"] = os.path.splitext(md_file)[0]
             markdown_pages.append(page)
@@ -251,6 +253,35 @@ class JSONLoader(DataLoader):
                 json_dirs = self._get_nested_json_dirs(json_path + path, json_dirs)
         # When no subdirectories remain, return list of JSON directories
         return json_dirs
+
+    def json_to_dict(self, json_string: str) -> dict:
+        """
+        Converts a JSON string to a Python dictionary
+        """
+        result = {}
+        try:
+            json_string = json_string.replace("'", '\\"')
+            # Remove any trailing commas
+            json_string = json_string.rstrip(",")
+            # Remove any trailing whitespace
+            json_string = json_string.strip()
+            # Parse the JSON string
+            loaded_json = loads(json_string)
+            if isinstance(loaded_json, dict):
+                result = loaded_json
+            else:
+                raise ValueError(f"Failed to convert {json_string} to dict")
+        except ValueError as e:
+            # Exit the script if JSON parsing fails
+            raise SystemExit(
+                f"{json_string} Error parsing front matter JSON string: {e}. Exiting script."
+            ) from e
+        except TypeError as e:
+            raise SystemExit(
+                f"""{json_string} Error converting front matter JSON string to dict: {e}. 
+                Exiting script."""
+            ) from e
+        return result
 
 
 class SettingsLoader(DataLoader):
