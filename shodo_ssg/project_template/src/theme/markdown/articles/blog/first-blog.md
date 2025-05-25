@@ -1,3 +1,12 @@
+@frontmatter
+{
+    "title": "This is the first Blog Title!",
+    "category": "general",
+    "body_class": "blog-page first-blog",
+    "description": "This is the first blog description"
+}
+@endfrontmatter
+
 ## First Blog Post
 This page was automatically generated as html by creating a markdown file in the `markdown/articles` directory! It's a perfect way to quickly publish blog posts, articles, or updates. 
 

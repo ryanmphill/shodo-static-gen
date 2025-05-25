@@ -148,6 +148,76 @@ def test_template_handler_write_linked_template_pages(
         assert "<!DOCTYPE html>" in page_contents
 
 
+def test_template_handler_get_front_matter_returns_front_matter_from_file(
+    template_handler_dependencies, temp_project_path
+):  # pylint: disable=redefined-outer-name
+    """Test the get_front_matter method of the TemplateHandler class."""
+    settings, markdown_loader, json_loader = template_handler_dependencies
+    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+
+    test_article_path = os.path.join(
+        temp_project_path, "src/theme/markdown/articles/test_dir/"
+    )
+    test_article_name = "test_article.md"
+
+    content = "@frontmatter\n"
+    content += '{"title": "Test Article",\n"description": "This is a test article."}\n'
+    content += "@endfrontmatter\n"
+    content += "This is the content of the test article.\n"
+
+    # Create a test article md file with front matter
+    os.mkdir(test_article_path)
+    with open(
+        os.path.join(test_article_path, test_article_name), "w", encoding="utf-8"
+    ) as article_file:
+        article_file.write(content)
+
+    front_matter = template_handler.get_front_matter(
+        os.path.join(test_article_path, test_article_name)
+    )
+
+    assert front_matter
+    assert isinstance(front_matter, dict)
+    assert "title" in front_matter
+    assert "description" in front_matter
+    assert front_matter["title"] == "Test Article"
+    assert front_matter["description"] == "This is a test article."
+    for key in front_matter:
+        assert front_matter[key] != "This is the content of the test article."
+
+
+def test_template_handler_clear_front_matter_returns_content_without_front_matter(
+    template_handler_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """Test the clear_front_matter method of the TemplateHandler class."""
+    settings, markdown_loader, json_loader = template_handler_dependencies
+    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+
+    content = """
+    @frontmatter
+    {"title": "Test Article", "description": "This is a test article."}
+    @endfrontmatter
+    This is the content of the test article.
+    <p>@frontmatter
+    {"title": "Another Article", "description": "This is another test article."}
+    @endfrontmatter</p>
+    This is the content of another test article.
+    """
+
+    expected_content = """
+    This is the content of the test article.
+    This is the content of another test article.
+    """
+
+    result = template_handler.clear_front_matter(file_path=None, content=content)
+
+    # Remove all whitespace
+    result = "".join(result.split())
+    expected_content = "".join(expected_content.split())
+
+    assert result == expected_content
+
+
 def test_template_handler_write_article_pages(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
@@ -172,7 +242,10 @@ def test_template_handler_write_article_pages(
             page_contents = page_file.read()
         assert page_contents
         assert "<!DOCTYPE html>" in page_contents
-        assert md_page["html"] in page_contents
+        assert (
+            template_handler.clear_front_matter(file_path=None, content=md_page["html"])
+            in page_contents
+        )
 
 
 def test_template_handler_get_md_layout_template_defaults_to_root_layout(
@@ -267,4 +340,37 @@ def test_template_handler_write(
             page_contents = page_file.read()
         assert page_contents
         assert "<!DOCTYPE html>" in page_contents
-        assert md_page["html"] in page_contents
+        assert (
+            template_handler.clear_front_matter(file_path=None, content=md_page["html"])
+            in page_contents
+        )
+
+
+def test_template_handler_write_outputs_frontmatter_with_correct_heirarchy(
+    template_handler_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test that the write method output of the TemplateHandler class overwrites the
+    global config with the homepage frontmatter.
+    """
+    settings, markdown_loader, json_loader = template_handler_dependencies
+    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+
+    if not os.path.exists(template_handler.build_dir):
+        os.makedirs(template_handler.build_dir)
+
+    template_handler.write()
+
+    # Check that the home page was written
+    assert os.path.exists(f"{template_handler.build_dir}/index.html")
+    with open(
+        f"{template_handler.build_dir}/index.html", "r", encoding="utf-8"
+    ) as index_file:
+        index_contents = index_file.read()
+    assert index_contents
+    assert (
+        "<title>Shodo - A Static Site Generator - Home</title>" in index_contents
+    ), "Metadata should be pulled from the homepage frontmatter"
+    assert (
+        '<meta name="description" content="Home page of the site">' in index_contents
+    ), "Metadata should be pulled from the homepage frontmatter"
