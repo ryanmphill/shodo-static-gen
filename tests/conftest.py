@@ -5,12 +5,17 @@ import os
 import shutil
 import pytest
 
+from shodo_ssg.api import API
 from shodo_ssg.data_loader import (
     SettingsDict,
     MarkdownLoader,
     JSONLoader,
 )
 
+from shodo_ssg.front_matter_processor import FrontMatterProcessor
+from shodo_ssg.html_root_layout_builder import HTMLRootLayoutBuilder
+from shodo_ssg.pagination_handler import PaginationHandler
+from shodo_ssg.template_context import TemplateContext
 from shodo_ssg.template_handler import TemplateHandler
 
 from shodo_ssg.asset_writer import (
@@ -93,15 +98,45 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
 
 
 @pytest.fixture
-def template_handler_dependencies(
+def front_matter_processor_dependencies(
     settings_dict,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the FrontMatterProcessor class.
+    """
+    json_loader = JSONLoader(settings_dict)
+    return json_loader
+
+
+@pytest.fixture
+def template_context_dependencies(
+    settings_dict,
+    front_matter_processor_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the TemplateContext class.
+    """
+    markdown_loader = MarkdownLoader(settings_dict)
+    json_loader = front_matter_processor_dependencies
+    front_matter_processor = FrontMatterProcessor(json_loader)
+    return markdown_loader, json_loader, front_matter_processor
+
+
+@pytest.fixture
+def template_handler_dependencies(
+    settings_dict, template_context_dependencies
 ):  # pylint: disable=redefined-outer-name
     """
     Create the dependencies for the TemplateHandler class.
     """
-    markdown_loader = MarkdownLoader(settings_dict)
-    json_loader = JSONLoader(settings_dict)
-    return SettingsDict(settings_dict), markdown_loader, json_loader
+    root_layout_builder = HTMLRootLayoutBuilder()
+    markdown_loader, json_loader, front_matter_processor = template_context_dependencies
+    template_context = TemplateContext(
+        markdown_loader, json_loader, front_matter_processor
+    )
+    api = API(template_context, front_matter_processor)
+    pagination_handler = PaginationHandler(template_context, root_layout_builder, api)
+    return SettingsDict(settings_dict), root_layout_builder, pagination_handler, api
 
 
 @pytest.fixture
@@ -111,8 +146,12 @@ def static_site_generator_deps(
     """
     Create the dependencies for the StaticSiteGenerator class.
     """
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
     favicon_writer = FaviconWriter(settings)
     script_writer = ScriptWriter(settings)
     image_writer = ImageWriter(settings)

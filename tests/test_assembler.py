@@ -49,12 +49,12 @@ def test_initialize_components(settings_dict, static_site_generator_deps):
 
     assert components[0].build_dir == template_handler.build_dir
     assert components[0].root_path == template_handler.root_path
-    assert len(components[0].md_pages) == len(template_handler.md_pages)
-    assert set(components[0].render_args.keys()) == set(
-        template_handler.render_args.keys()
+    assert len(components[0].context.md_pages) == len(template_handler.context.md_pages)
+    assert set(components[0].context.render_args.keys()) == set(
+        template_handler.context.render_args.keys()
     )
-    assert components[0].markdown_loader
-    assert components[0].json_loader
+    assert components[0].context.markdown_loader
+    assert components[0].context.json_loader
     assert components[1].favicon
     assert components[1].scripts
     assert components[1].images
@@ -79,7 +79,9 @@ def test_generate_site(static_site_generator_deps, settings_dict):
     assert linked_template_pages_exist_in_build_dir(
         build_path, settings_dict["template_paths"]
     )
-    assert markdown_pages_exist_in_build_dir(build_path, template_handler.md_pages)
+    assert markdown_pages_exist_in_build_dir(
+        build_path, template_handler.context.md_pages
+    )
     assert scripts_exist_in_build_dir(build_path)
     assert css_exist_in_build_dir(build_path)
     assert images_exist_in_build_dir(build_path)
@@ -89,8 +91,12 @@ def test_generate_site(static_site_generator_deps, settings_dict):
 def test_build_static_site(temp_project_path, template_handler_dependencies):
     """Test the build_static_site function"""
     tmp_proj_root = os.path.abspath(temp_project_path)
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
     build_path = os.path.abspath(settings["build_dir"])
 
     if os.path.exists(build_path):
@@ -106,7 +112,9 @@ def test_build_static_site(temp_project_path, template_handler_dependencies):
     assert linked_template_pages_exist_in_build_dir(
         build_path, settings["template_paths"]
     )
-    assert markdown_pages_exist_in_build_dir(build_path, template_handler.md_pages)
+    assert markdown_pages_exist_in_build_dir(
+        build_path, template_handler.context.md_pages
+    )
     assert scripts_exist_in_build_dir(build_path)
     assert css_exist_in_build_dir(build_path)
     assert images_exist_in_build_dir(build_path)

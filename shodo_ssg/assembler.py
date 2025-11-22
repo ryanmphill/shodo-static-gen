@@ -3,6 +3,7 @@ This module loads settings and initializes components for building a static site
 """
 
 import logging
+from shodo_ssg.api import API
 from shodo_ssg.asset_writer import (
     AssetHandler,
     CSSWriter,
@@ -11,7 +12,11 @@ from shodo_ssg.asset_writer import (
     ScriptWriter,
 )
 from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsLoader
+from shodo_ssg.front_matter_processor import FrontMatterProcessor
+from shodo_ssg.html_root_layout_builder import HTMLRootLayoutBuilder
+from shodo_ssg.pagination_handler import PaginationHandler
 from shodo_ssg.static_site_generator import StaticSiteGenerator
+from shodo_ssg.template_context import TemplateContext
 from shodo_ssg.template_handler import TemplateHandler
 
 
@@ -38,7 +43,17 @@ def initialize_components(settings: dict):
     """
     md_loader = MarkdownLoader(settings)
     json_loader = JSONLoader(settings)
-    template_handler = TemplateHandler(settings, md_loader, json_loader)
+    root_layout_builder = HTMLRootLayoutBuilder()
+    front_matter_processor = FrontMatterProcessor(json_loader)
+    template_context = TemplateContext(md_loader, json_loader, front_matter_processor)
+    api = API(template_context, front_matter_processor)
+    pagination_handler = PaginationHandler(template_context, root_layout_builder, api)
+    template_handler = TemplateHandler(
+        settings,
+        root_layout_builder,
+        pagination_handler,
+        api,
+    )
     favicon_writer = FaviconWriter(settings)
     script_writer = ScriptWriter(settings)
     image_writer = ImageWriter(settings)
@@ -62,6 +77,7 @@ def generate_site(template_handler: TemplateHandler, asset_handler: AssetHandler
     site_generator = StaticSiteGenerator(template_handler, asset_handler)
     site_generator.build()
 
+
 def build_static_site(root_path: str):
     """
     Builds a static site by initializing the necessary components and calling the build method.
@@ -71,7 +87,7 @@ def build_static_site(root_path: str):
     instance and calls its build method to generate the static site.
     """
     # Set up logging configuration
-    logging.basicConfig(level=logging.INFO, format='%(message)s')
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
 
     # Load settings
     settings = load_settings(root_path)
