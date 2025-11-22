@@ -274,11 +274,11 @@ class JSONLoader(DataLoader):
         except ValueError as e:
             # Exit the script if JSON parsing fails
             raise SystemExit(
-                f"{json_string} Error parsing front matter JSON string: {e}. Exiting script."
+                f"{json_string} Error parsing JSON string: {e}. Exiting script."
             ) from e
         except TypeError as e:
             raise SystemExit(
-                f"""{json_string} Error converting front matter JSON string to dict: {e}. 
+                f"""{json_string} Error converting JSON string to dict: {e}. 
                 Exiting script."""
             ) from e
         return result
