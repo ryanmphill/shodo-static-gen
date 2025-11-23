@@ -70,6 +70,7 @@ class PaginationHandler:
         all_items = self.api.shodo_get_articles(filters=pagination_filters)
         total_items = len(all_items)
         total_pages = (total_items + items_per_page - 1) // items_per_page
+        total_pages = max(total_pages, 1)
 
         # Get everything from os.path.dirname(destination_dir) after 'dist/'
         root_page_path = os.path.relpath(os.path.dirname(destination_dir), start="dist")
@@ -382,7 +383,7 @@ class PaginationHandler:
 
         # Step 4: Unquote numeric and boolean values
         result = re.sub(r'"\s*(-?\d+(?:\.\d+)?)\s*"', r"\1", result)
-        result = re.sub(r'"\s*(True|False)\s*"', r"\1", result)
+        result = re.sub(r'"\s*(True|False)\s*"', r"\1", result, flags=re.IGNORECASE)
         result = re.sub(r'"\s*(\[|\]|\{|\})\s*"', r"\1", result)
 
         # Step 5: Restore the string placeholders
