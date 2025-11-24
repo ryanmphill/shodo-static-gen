@@ -23,7 +23,20 @@ class TestPaginationHandler:
     def mock_context(self):
         """Fixture to provide a mock TemplateContext"""
         context = cast(TemplateContext, Mock(spec=TemplateContext))
-        context._render_args = {}  # pylint: disable=protected-access
+        # pylint: disable=protected-access
+        context._render_args = {
+            "users": [
+                {"id": 1, "name": "Alice", "role": "admin"},
+                {"id": 2, "name": "Bob", "role": "user"},
+                {"id": 3, "name": "Charlie", "role": "user"},
+            ],
+            "products": [
+                {"id": 101, "name": "Widget", "price": 9.99},
+                {"id": 102, "name": "Gadget", "price": 19.99},
+            ],
+            "single_item": {"id": 201, "name": "Solo", "price": 29.99},
+            "empty_collection": [],
+        }
 
         # Make render_args a property that always returns _render_args
         type(context).render_args = property(lambda self: self._render_args.copy())
@@ -67,6 +80,9 @@ class TestPaginationHandler:
         # Default: return 25 articles for pagination testing
         api.shodo_get_articles = Mock(
             return_value=[{"title": f"Article {i}"} for i in range(1, 26)]
+        )
+        api.shodo_query_store = Mock(
+            return_value=[{"name": f"Item {i}"} for i in range(1, 26)]
         )
         return api
 
@@ -139,7 +155,7 @@ class TestPaginationHandler:
         front_matter = {"paginate": "shodo_get_articles", "per_page": "10"}
 
         template_content = """
-        {% for post in shodo_get_articles(filters={'category': 'blog'}) %}
+        {% for post in shodo_get_articles(filters={'where': {'category': 'blog'}}) %}
         {% endfor %}
         """
 
@@ -200,8 +216,10 @@ class TestPaginationHandler:
         """Test that pagination extracts filters from template"""
         front_matter = {"paginate": "shodo_get_articles", "per_page": 10}
 
-        template_content = """
-        {% for post in shodo_get_articles(filters={"category": "technology", "tags": ["python"]}) %}
+        template_content = r"""
+        {% for post in shodo_get_articles(filters={
+            "where": {"category": "technology", "tags": { "contains": ["python"]}},
+        }) %}
         {% endfor %}
         """
 
@@ -222,8 +240,8 @@ class TestPaginationHandler:
         call_args = mock_api.shodo_get_articles.call_args
         filters = call_args.kwargs.get("filters", {})
 
-        assert filters.get("category") == "technology"
-        assert filters.get("tags") == ["python"]
+        assert filters.get("where").get("category") == "technology"
+        assert filters.get("where").get("tags").get("contains") == ["python"]
 
         pagination_handler.context.json_loader.json_to_dict = mock_json_to_dict
 
@@ -241,10 +259,9 @@ class TestPaginationHandler:
         """Test that pagination extracts filters from template"""
         front_matter = {"paginate": "shodo_get_articles", "per_page": 10}
 
-        template_content = """
+        template_content = r"""
         {% for post in shodo_get_articles(filters={
-            "category": "technology",
-            "tags": ["python"],
+            "where": {"category": "technology", "tags": { "contains": ["python"]}},
             "limit": pagination.per_page,
             "offset": pagination.per_page * (pagination.current_page - 1)
         }) %}
@@ -268,8 +285,8 @@ class TestPaginationHandler:
         call_args = mock_api.shodo_get_articles.call_args
         filters = call_args.kwargs.get("filters", {})
 
-        assert filters.get("category") == "technology"
-        assert filters.get("tags") == ["python"]
+        assert filters.get("where").get("category") == "technology"
+        assert filters.get("where").get("tags").get("contains") == ["python"]
         # offset and limit should be removed
         assert "offset" not in filters
         assert "limit" not in filters
@@ -565,7 +582,7 @@ class TestPaginationHandler:
     ):
         """Test extracting filters from shodo_get_articles call"""
         template_content = r"""
-        {% for post in shodo_get_articles(filters={'category': 'tech', 'limit': 5}) %}
+        {% for post in shodo_get_articles(filters={'where': {'category': 'tech'}, 'limit': 5}) %}
         {% endfor %}
         """
 
@@ -576,7 +593,7 @@ class TestPaginationHandler:
             )
 
         assert result is not None
-        assert result["category"] == "tech"
+        assert result["where"]["category"] == "tech"
         assert result["limit"] == 5
 
     def test_extract_pagination_filters_unsupported_query(
@@ -602,13 +619,15 @@ class TestPaginationHandler:
         self, pagination_handler: PaginationHandler
     ):
         """Test extracting simple filters from template"""
-        content = r"{% for post in shodo_get_articles({'category': 'tech'}) %}"
+        content = (
+            r"{% for post in shodo_get_articles({'where': {'category': 'tech'}}) %}"
+        )
 
         # pylint: disable=protected-access
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
+        assert result["where"]["category"] == "tech"
 
     def test_extract_article_query_filters_multiple_keys(
         self, pagination_handler: PaginationHandler
@@ -616,8 +635,7 @@ class TestPaginationHandler:
         """Test extracting multiple filter keys"""
         content = r"""
         {% for post in shodo_get_articles(filters={
-            'category': 'tech',
-            'tags': ['python', 'web'],
+            'where': {'category': 'tech', 'tags': {'contains': ['python', 'web']}},
             'limit': 10
         }) %}
         """
@@ -626,8 +644,8 @@ class TestPaginationHandler:
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
-        assert result["tags"] == ["python", "web"]
+        assert result["where"]["category"] == "tech"
+        assert result["where"]["tags"] == {"contains": ["python", "web"]}
         assert result["limit"] == 10
 
     def test_extract_article_query_filters_single_quotes(
@@ -672,7 +690,7 @@ class TestPaginationHandler:
         """Test extracting filters with trailing comma in last item"""
         content = r"""
         {% for post in shodo_get_articles({
-            'category': 'tech',
+            'where': {'category': 'tech'},
             'limit': 10,
         }) %}
         """
@@ -681,7 +699,7 @@ class TestPaginationHandler:
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
+        assert result["where"]["category"] == "tech"
         assert result["limit"] == 10
 
     def test_extract_article_query_filters_wraps_dynamic_variables_and_expressions_in_quotes(
@@ -716,12 +734,16 @@ class TestPaginationHandler:
         """Test extracting filters with nested structures"""
         content = r"""
         {% for post in shodo_get_articles({
+        'where': {
             'category': 'tech',
-            'tags': ['python', 'web', {'framework': 'django'}],
+            'tags': {'contains': ['python', 'web', {'framework': 'django'}]},
             'metadata': {
-                'author': 'John Doe',
-                'published': True
+                'equals': {
+                    'author': 'John Doe',
+                    'published': true
+                }
             }
+        }
         }) %}
         """
 
@@ -729,9 +751,11 @@ class TestPaginationHandler:
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
-        assert result["tags"] == ["python", "web", {"framework": "django"}]
-        assert result["metadata"] == {
+        assert result["where"]["category"] == "tech"
+        assert result["where"]["tags"] == {
+            "contains": ["python", "web", {"framework": "django"}]
+        }
+        assert result["where"]["metadata"]["equals"] == {
             "author": "John Doe",
             "published": True,
         }
@@ -742,12 +766,16 @@ class TestPaginationHandler:
         """Test extracting filters with trailing commas in nested structures"""
         content = r"""
         {% for post in shodo_get_articles({
+        'where': {
             'category': 'tech',
-            'tags': ['python', 'web', {'framework': 'django',}],
+            'tags': {'contains': ['python', 'web', {'framework': 'django'}]},
             'metadata': {
-                'author': 'John Doe',
-                'published': True,
+                'equals': {
+                    'author': 'John Doe',
+                    'published': true,
+                }
             },
+        }
         }) %}
         """
 
@@ -755,9 +783,11 @@ class TestPaginationHandler:
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
-        assert result["tags"] == ["python", "web", {"framework": "django"}]
-        assert result["metadata"] == {
+        assert result["where"]["category"] == "tech"
+        assert result["where"]["tags"] == {
+            "contains": ["python", "web", {"framework": "django"}]
+        }
+        assert result["where"]["metadata"]["equals"] == {
             "author": "John Doe",
             "published": True,
         }
@@ -825,11 +855,13 @@ class TestPaginationHandler:
         """Test extracting filters when sentences contain quotes"""
         content = r"""
         {% for post in shodo_get_articles({
-            "category": "tech",
-            "quote": "She said, 'This is a great article!' and smiled.",
-            "another_quote": 'He replied, "Indeed, it is!"',
-            "third_quote": "She said, 'Let's test quotes!'",
-            "fourth_quote": 'He responded, "Let\'s do it!"'
+            "where": {
+                "category": "tech",
+                "quote": "She said, 'This is a great article!' and smiled.",
+                "another_quote": 'He replied, "Indeed, it is!"',
+                "third_quote": "She said, 'Let's test quotes!'",
+                "fourth_quote": 'He responded, "Let\'s do it!"'
+            }
         }) %}
         """
 
@@ -837,8 +869,84 @@ class TestPaginationHandler:
         result = pagination_handler._extract_article_query_filters(content)
 
         assert result is not None
-        assert result["category"] == "tech"
-        assert result["quote"] == "She said, 'This is a great article!' and smiled."
-        assert result["another_quote"] == 'He replied, "Indeed, it is!"'
-        assert result["third_quote"] == "She said, 'Let's test quotes!'"
-        assert result["fourth_quote"] == 'He responded, "Let\'s do it!"'
+        assert result["where"]["category"] == "tech"
+        assert (
+            result["where"]["quote"]
+            == "She said, 'This is a great article!' and smiled."
+        )
+        assert result["where"]["another_quote"] == 'He replied, "Indeed, it is!"'
+        assert result["where"]["third_quote"] == "She said, 'Let's test quotes!'"
+        assert result["where"]["fourth_quote"] == 'He responded, "Let\'s do it!"'
+
+    @patch("os.makedirs")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_handle_pagination_creates_multiple_pages_for_store_query(
+        self,
+        _mock_file,
+        mock_makedirs,
+        pagination_handler: PaginationHandler,
+        mock_template,
+    ):
+        """Test that pagination creates the correct number of pages"""
+        front_matter = {"paginate": "shodo_query_store", "per_page": 10}
+
+        template_content = """
+        {% for post in shodo_query_store({"collection": "products"}) %}
+        {% endfor %}
+        """
+
+        with patch("builtins.open", mock_open(read_data=template_content)) as m:
+            pagination_handler.handle_pagination(
+                "/path/to/template.jinja",
+                mock_template,
+                "dist/blog/index.html",
+                front_matter,
+            )
+
+            assert m.call_count == 3 + 1  # +1 for reading template file
+
+        # Should create 3 pages (25 items / 10 per page = 2.5 -> 3 pages)
+        assert mock_makedirs.call_count == 3 - 1  # No dir for first page
+
+    @patch("os.makedirs")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_handle_pagination_extracts_filters_from_store_query(
+        self,
+        _mock_file,
+        _mock_makedirs,
+        pagination_handler: PaginationHandler,
+        mock_template: Template,
+        mock_api: API,
+        front_matter_processor_dependencies,
+    ):
+        """Test that pagination extracts filters from template"""
+        front_matter = {"paginate": "shodo_query_store", "per_page": 10}
+
+        template_content = r"""
+        {% for post in shodo_query_store(filters={
+            "where": {"collection": "products", "name": { "in": ["Widget", "Gadget"]}},
+        }) %}
+        {% endfor %}
+        """
+
+        json_loader = front_matter_processor_dependencies
+        mock_json_to_dict = pagination_handler.context.json_loader.json_to_dict
+        pagination_handler.context.json_loader.json_to_dict = json_loader.json_to_dict
+
+        with patch("builtins.open", mock_open(read_data=template_content)):
+            pagination_handler.handle_pagination(
+                "/path/to/template.jinja",
+                mock_template,
+                "dist/blog/index.html",
+                front_matter,
+            )
+
+        # Verify API was called with correct filters
+        mock_api.shodo_query_store.assert_called_once()
+        call_args = mock_api.shodo_query_store.call_args
+        filters = call_args.kwargs.get("filters", {})
+
+        assert filters.get("where").get("collection") == "products"
+        assert filters.get("where").get("name").get("in") == ["Widget", "Gadget"]
+
+        pagination_handler.context.json_loader.json_to_dict = mock_json_to_dict

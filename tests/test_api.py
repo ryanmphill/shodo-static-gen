@@ -2,6 +2,7 @@
 Tests for the API class
 """
 
+from datetime import datetime
 from unittest.mock import Mock
 import pytest
 from shodo_ssg.api import API
@@ -20,12 +21,20 @@ class TestAPI:
         return FrontMatterProcessor(json_loader)
 
     @pytest.fixture
-    def template_context(self):
+    def template_context(self, template_context_dependencies):
         """Fixture to provide a TemplateContext instance with sample data"""
-        context = Mock()
+        context_mock = Mock()
+
+        markdown_loader, json_loader, front_matter_processor = (
+            template_context_dependencies
+        )
+
+        context = TemplateContext(markdown_loader, json_loader, front_matter_processor)
+
+        context_mock.format_md_page_data = context.format_md_page_data
 
         # Add sample markdown pages
-        context.md_pages = [
+        context_mock.md_pages = [
             {
                 "name": "first-post",
                 "url_segment": "/blog/",
@@ -85,7 +94,7 @@ class TestAPI:
         ]
 
         # Add sample store data
-        context.render_args = {
+        context_mock.render_args = {
             "users": [
                 {"id": 1, "name": "Alice", "role": "admin"},
                 {"id": 2, "name": "Bob", "role": "user"},
@@ -95,80 +104,16 @@ class TestAPI:
                 {"id": 101, "name": "Widget", "price": 9.99},
                 {"id": 102, "name": "Gadget", "price": 19.99},
             ],
+            "single_item": {"id": 201, "name": "Solo", "price": 29.99},
+            "empty_collection": [],
         }
 
-        return context
+        return context_mock
 
     @pytest.fixture
     def api(self, template_context: TemplateContext, front_matter_processor):
         """Fixture to provide an API instance"""
         return API(template_context, front_matter_processor)
-
-    # Tests for _format_md_page_data
-    def test_format_md_page_data_complete(
-        self, api: API, template_context: TemplateContext
-    ):
-        """Test _format_md_page_data with complete front matter"""
-        md_page = template_context.md_pages[0]
-        # pylint: disable=protected-access
-        result = api._format_md_page_data(md_page)
-
-        assert result["file_name"] == "first-post"
-        assert result["directory"] == "/blog/"
-        assert result["path"] == "/blog/first-post"
-        assert result["title"] == "First Post"
-        assert result["description"] == "First post description"
-        assert result["summary"] == "First post summary"
-        assert result["keywords"] == ["python", "ssg"]
-        assert result["author"] == "John Doe"
-        assert result["category"] == "technology"
-        assert result["tags"] == ["python", "web"]
-        assert result["date"] == "2025-01-15"
-        assert result["draft"] is False
-        assert result["image"] == "/images/first.jpg"
-        assert result["image_alt"] == "First post image"
-        assert result["content"] == "<p>First post content</p>"
-
-    def test_format_md_page_data_minimal(self, api: API):
-        """Test _format_md_page_data with minimal front matter"""
-        md_page = {
-            "name": "minimal-post",
-            "url_segment": "/posts/",
-            "html": "<p>Minimal content</p>",
-            "front_matter": {},
-        }
-        # pylint: disable=protected-access
-        result = api._format_md_page_data(md_page)
-
-        assert result["file_name"] == "minimal-post"
-        assert result["directory"] == "/posts/"
-        assert result["path"] == "/posts/minimal-post"
-        assert result["title"] == ""
-        assert result["description"] == ""
-        assert result["summary"] == ""
-        assert result["keywords"] == []
-        assert result["author"] == ""
-        assert result["category"] == ""
-        assert result["tags"] == []
-        assert result["date"] == ""
-        assert result["draft"] is False
-        assert result["image"] == ""
-        assert result["image_alt"] == ""
-        assert result["content"] == "<p>Minimal content</p>"
-
-    def test_format_md_page_data_no_front_matter(self, api: API):
-        """Test _format_md_page_data when front_matter is None"""
-        md_page = {
-            "name": "no-front-matter",
-            "url_segment": "/posts/",
-            "html": "<p>Content</p>",
-            "front_matter": None,
-        }
-        # pylint: disable=protected-access
-        result = api._format_md_page_data(md_page)
-
-        assert result["title"] == ""
-        assert result["draft"] is False
 
     # Tests for shodo_get_articles
     def test_shodo_get_articles_no_filters(self, api: API):
@@ -184,7 +129,8 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_directory_starts_with(self, api: API):
         """Test filtering articles by directory_starts_with"""
-        filters = {"directory_starts_with": "/blog"}
+        filters = {"where": {"directory": {"starts_with": "/blog"}}}
+
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
@@ -194,7 +140,7 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_directory_equals(self, api: API):
         """Test filtering articles by directory_equals"""
-        filters = {"directory_equals": "/blog/"}
+        filters = {"where": {"directory": {"equals": "/blog/"}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 1
@@ -203,7 +149,7 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_category_string(self, api: API):
         """Test filtering articles by category as string"""
-        filters = {"category": "technology"}
+        filters = {"where": {"category": {"equals": "technology"}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 1
@@ -212,7 +158,7 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_category_list(self, api: API):
         """Test filtering articles by category as list"""
-        filters = {"category": ["technology", "tutorials"]}
+        filters = {"where": {"category": {"in": ["technology", "tutorials"]}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
@@ -222,7 +168,7 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_tags(self, api: API):
         """Test filtering articles by tags"""
-        filters = {"tags": ["web"]}
+        filters = {"where": {"tags": {"contains": "web"}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
@@ -230,26 +176,26 @@ class TestAPI:
 
     def test_shodo_get_articles_filter_by_date(self, api: API):
         """Test filtering articles by date"""
-        filters = {"date": "2025-02-01"}
+        filters = {"where": {"date": {"gte": "2025-02-01"}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 1
         assert result[0]["title"] == "Second Post"
-        assert result[0]["date"] >= "2025-02-01"
+        assert result[0]["date"] >= datetime.strptime("2025-02-01", "%Y-%m-%d")
 
     def test_shodo_get_articles_order_by_date(self, api: API):
         """Test ordering articles by date (descending)"""
-        filters = {"order_by": "date"}
+        filters = {"order_by": {"desc": "date"}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 3
-        assert result[0]["date"] == "2025-02-20"  # Most recent first
-        assert result[1]["date"] == "2025-01-15"
-        assert result[2]["date"] == "2025-01-01"
+        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-02-20"  # Most recent first
+        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-15"
+        assert result[2]["date"].strftime('%Y-%m-%d') == "2025-01-01"
 
     def test_shodo_get_articles_order_by_title(self, api: API):
         """Test ordering articles by title (ascending)"""
-        filters = {"order_by": "title"}
+        filters = {"order_by": {"asc": "title"}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 3
@@ -258,36 +204,38 @@ class TestAPI:
 
     def test_shodo_get_articles_with_limit(self, api: API):
         """Test limiting number of returned articles"""
-        filters = {"limit": 2, "order_by": "date"}
+        filters = {"limit": 2, "order_by": {"desc": "date"}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
-        assert result[0]["date"] == "2025-02-20"
-        assert result[1]["date"] == "2025-01-15"
+        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-02-20"
+        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-15"
 
     def test_shodo_get_articles_with_offset(self, api: API):
         """Test offsetting returned articles"""
-        filters = {"offset": 1, "order_by": "date"}
+        filters = {"offset": 1, "order_by": {"desc": "date"}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
-        assert result[0]["date"] == "2025-01-15"
-        assert result[1]["date"] == "2025-01-01"
+        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-01-15"
+        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-01"
 
     def test_shodo_get_articles_with_offset_and_limit(self, api: API):
         """Test combining offset and limit"""
-        filters = {"offset": 1, "limit": 1, "order_by": "date"}
+        filters = {"offset": 1, "limit": 1, "order_by": {"desc": "date"}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 1
-        assert result[0]["date"] == "2025-01-15"
+        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-01-15"
 
     def test_shodo_get_articles_multiple_filters(self, api: API):
         """Test combining multiple filters"""
         filters = {
-            "directory_starts_with": "/blog",
-            "tags": ["web"],
-            "order_by": "date",
+            "where": {
+                "directory": {"starts_with": "/blog"},
+                "tags": {"contains": "web"},
+            },
+            "order_by": {"desc": "date"},
             "limit": 1,
         }
         result = api.shodo_get_articles(filters)
@@ -297,12 +245,78 @@ class TestAPI:
 
     def test_shodo_get_articles_no_matches(self, api: API):
         """Test when filters match no articles"""
-        filters = {"category": "nonexistent"}
+        filters = {"where": {"category": {"equals": "nonexistent"}}}
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 0
 
-    # TODO: Add tests for shodo_query_store
+    # Tests for shodo_query_store
+    def test_shodo_query_store_no_filters(self, api: API):
+        """Test shodo_query_store raises ValueError for missing 'collection' key"""
+        with pytest.raises(ValueError):
+            api.shodo_query_store({})
+
+    def test_shodo_query_store_filter_by_role(self, api: API):
+        """Test filtering store data by role"""
+        filters = {"collection": "users", "where": {"role": {"equals": "user"}}}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 2
+        assert all(user["role"] == "user" for user in result)
+
+    def test_shodo_query_store_order_by_name(self, api: API):
+        """Test ordering store data by name (ascending)"""
+        filters = {"collection": "users", "order_by": {"asc": "name"}}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 3
+        names = [user["name"] for user in result]
+        assert names == sorted(names)
+
+    def test_shodo_query_store_with_limit(self, api: API):
+        """Test limiting number of returned store items"""
+        filters = {"collection": "products", "limit": 1}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 1
+        assert result[0]["name"] == "Widget"
+
+    def test_shodo_query_store_with_offset(self, api: API):
+        """Test offsetting returned store items"""
+        filters = {"collection": "products", "offset": 1}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 1
+        assert result[0]["name"] == "Gadget"
+
+    def test_shodo_query_store_no_matches(self, api: API):
+        """Test when filters match no store items"""
+        filters = {"collection": "users", "where": {"name": {"equals": "Nonexistent"}}}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 0
+
+    def test_shodo_query_store_invalid_collection(self, api: API):
+        """Test shodo_query_store with invalid collection name"""
+        filters = {"collection": "invalid_collection"}
+        with pytest.raises(ValueError):
+            api.shodo_query_store(filters)
+
+    def test_shodo_query_store_single_item_collection(self, api: API):
+        """Test shodo_query_store with a collection that is a single dictionary item"""
+        filters = {"collection": "single_item"}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 1
+        assert result[0]["name"] == "Solo"
+
+    def test_shodo_query_store_empty_collection(self, api: API):
+        """Test shodo_query_store with an empty collection"""
+        api.context.render_args["empty_collection"] = []
+        filters = {"collection": "empty_collection"}
+        result = api.shodo_query_store(filters)
+
+        assert len(result) == 0
 
     # Tests for shodo_get_excerpt
     def test_shodo_get_excerpt_single_paragraph(self, api: API):

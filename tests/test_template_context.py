@@ -75,3 +75,110 @@ def test_template_context_update_render_arg(
 
     assert key in template_context.render_args
     assert template_context.render_args[key] == value
+
+
+# Tests for _format_md_page_data
+def test_format_md_page_data_complete(
+    template_context_dependencies,
+):
+    """Test _format_md_page_data with complete front matter"""
+    markdown_loader, json_loader, front_matter_processor = template_context_dependencies
+    template_context = TemplateContext(
+        markdown_loader, json_loader, front_matter_processor
+    )
+
+    md_page = {
+        "name": "first-post",
+        "url_segment": "/blog/",
+        "html": "<p>First post content</p>",
+        "front_matter": {
+            "title": "First Post",
+            "description": "First post description",
+            "summary": "First post summary",
+            "keywords": ["python", "ssg"],
+            "author": "John Doe",
+            "category": "technology",
+            "tags": ["python", "web"],
+            "date": "2025-01-15",
+            "draft": False,
+            "image": "/images/first.jpg",
+            "image_alt": "First post image",
+        },
+    }
+
+    # pylint: disable=protected-access
+    result = template_context.format_md_page_data(md_page)
+
+    assert result["file_name"] == "first-post"
+    assert result["directory"] == "/blog/"
+    assert result["path"] == "/blog/first-post"
+    assert result["title"] == "First Post"
+    assert result["description"] == "First post description"
+    assert result["summary"] == "First post summary"
+    assert result["keywords"] == ["python", "ssg"]
+    assert result["author"] == "John Doe"
+    assert result["category"] == "technology"
+    assert result["tags"] == ["python", "web"]
+    assert result["date"].strftime('%Y-%m-%d') == "2025-01-15"
+    assert result["draft"] is False
+    assert result["image"] == "/images/first.jpg"
+    assert result["image_alt"] == "First post image"
+    assert result["content"] == "<p>First post content</p>"
+
+
+def test_format_md_page_data_minimal(
+    template_context_dependencies,
+):
+    """Test _format_md_page_data with minimal front matter"""
+    markdown_loader, json_loader, front_matter_processor = template_context_dependencies
+    template_context = TemplateContext(
+        markdown_loader, json_loader, front_matter_processor
+    )
+
+    md_page = {
+        "name": "minimal-post",
+        "url_segment": "/posts/",
+        "html": "<p>Minimal content</p>",
+        "front_matter": {},
+    }
+
+    # pylint: disable=protected-access
+    result = template_context.format_md_page_data(md_page)
+
+    assert result["file_name"] == "minimal-post"
+    assert result["directory"] == "/posts/"
+    assert result["path"] == "/posts/minimal-post"
+    assert result["title"] == ""
+    assert result["description"] == ""
+    assert result["summary"] == ""
+    assert result["keywords"] == []
+    assert result["author"] == ""
+    assert result["category"] == ""
+    assert result["tags"] == []
+    assert result["date"] == ""
+    assert result["draft"] is False
+    assert result["image"] == ""
+    assert result["image_alt"] == ""
+    assert result["content"] == "<p>Minimal content</p>"
+
+
+def test_format_md_page_data_no_front_matter(
+    template_context_dependencies,
+):
+    """Test _format_md_page_data when front_matter is None"""
+    markdown_loader, json_loader, front_matter_processor = template_context_dependencies
+    template_context = TemplateContext(
+        markdown_loader, json_loader, front_matter_processor
+    )
+
+    md_page = {
+        "name": "no-front-matter",
+        "url_segment": "/posts/",
+        "html": "<p>Content</p>",
+        "front_matter": None,
+    }
+    # pylint: disable=protected-access
+    result = template_context.format_md_page_data(md_page)
+
+    assert result["title"] == ""
+    assert result["draft"] is False

@@ -2,7 +2,10 @@
 Template context management for static site generation.
 """
 
+from datetime import datetime
+import logging
 import os
+from zoneinfo import ZoneInfo
 from shodo_ssg.data_loader import JSONLoader, MarkdownLoader
 from shodo_ssg.front_matter_processor import FrontMatterProcessor
 
@@ -79,3 +82,125 @@ class TemplateContext:
 
         front_matter = self.front_matter_processor.get_front_matter(content)
         return front_matter
+
+    def format_md_page_data(self, md_page: dict) -> dict:
+        """
+        Format the markdown page data for rendering. This includes extracting
+        the front matter and content from the markdown page. Used for rendering
+        a list of articles/posts in a template with the shodo_get_articles function.
+        """
+        post = {}
+        post["file_name"] = md_page["name"]
+        post["directory"] = md_page["url_segment"]
+        post["path"] = os.path.join(md_page["url_segment"], md_page["name"])
+
+        front_matter = md_page["front_matter"]
+
+        if not isinstance(front_matter, dict):
+            front_matter = {}
+
+        url_origin = self.render_args.get("url_origin", "")
+        tz = self.render_args.get("timezone", None)
+
+        link = ""
+        if url_origin:
+            link = os.path.join(url_origin, post["path"].lstrip("/"))
+
+        post["title"] = front_matter.get("title", "")
+        post["description"] = front_matter.get("description", "")
+        post["summary"] = front_matter.get("summary", "")
+        post["keywords"] = front_matter.get("keywords", [])
+        post["author"] = front_matter.get("author", "")
+        post["category"] = front_matter.get("category", "")
+        post["tags"] = front_matter.get("tags", [])
+        post["date"] = front_matter.get("date", "")
+        post["published_datetime"] = front_matter.get("published_datetime", "")
+        post["published_dt_local"] = ""
+        post["draft"] = front_matter.get("draft", False)
+        post["image"] = front_matter.get("image", "")
+        post["image_alt"] = front_matter.get("image_alt", "")
+        post["content"] = md_page["html"]
+        post["modified_datetime"] = front_matter.get("modified_datetime", "")
+        post["modified_dt_local"] = ""
+        post["extra"] = front_matter.get("extra", {})
+        post["link"] = link
+
+        utc_pub_datetime = front_matter.get("published_datetime", "")
+        if utc_pub_datetime:
+            post["published_datetime"] = self._get_date_object_from_utc(
+                utc_pub_datetime, post["path"]
+            )
+            if tz:
+                post["published_dt_local"] = self._get_local_datetime_from_utc(
+                    post["published_datetime"], tz, post["path"]
+                )
+        utc_mod_datetime = front_matter.get("modified_datetime", "")
+
+        if utc_mod_datetime:
+            post["modified_datetime"] = self._get_date_object_from_utc(
+                utc_mod_datetime, post["path"]
+            )
+            if tz:
+                post["modified_dt_local"] = self._get_local_datetime_from_utc(
+                    post["modified_datetime"], tz, post["path"]
+                )
+        date = front_matter.get("date", "")
+        if date:
+            post["date"] = self._get_date_object_from_string(date, post["path"])
+
+        return post
+
+    def _get_date_object_from_utc(self, utc_date_str: str, file_path: str):
+        """
+        Convert a date string to a datetime object.
+        """
+        try:
+            dt_object = datetime.strptime(utc_date_str, "%Y-%m-%dT%H:%M:%SZ")
+            return dt_object
+        except ValueError as e:
+            logging.error(
+                "Invalid date format in %s: %s. Expected format: 'YYYY-MM-DDTHH:MM:SSZ'",
+                file_path,
+                utc_date_str,
+            )
+            raise SystemExit from e
+
+    def _get_date_object_from_string(self, date_str: str, file_path: str):
+        """
+        Convert a date string YYYY-MM-DD or YYYY-MM-DDTHH:MM:SSZ to a datetime object.
+        """
+        try:
+            dt_object = datetime.strptime(date_str, "%Y-%m-%d")
+            return dt_object
+        except ValueError:
+            try:
+                # Try parsing as ISO format first
+                dt_object = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%SZ")
+                return dt_object
+            except ValueError as ex:
+                logging.error(
+                    "Invalid date format in %s: %s. Expected format: 'YYYY-MM-DD' "
+                    + "or 'YYYY-MM-DDTHH:MM:SSZ'",
+                    file_path,
+                    date_str,
+                )
+                raise SystemExit from ex
+
+    def _get_local_datetime_from_utc(
+        self, utc_datetime: datetime, tz: str, file_path: str
+    ):
+        """
+        Convert a UTC date string to a local datetime object.
+        """
+        try:
+            utc_datetime = utc_datetime.replace(tzinfo=ZoneInfo("UTC"))
+            local_timezone = ZoneInfo(tz)  # Change to your local timezone
+            local_datetime = utc_datetime.astimezone(local_timezone)
+            return local_datetime
+        except Exception as e:
+            logging.error(
+                "Error converting UTC to local datetime in %s: %s",
+                file_path,
+                str(e),
+            )
+            raise SystemExit from e

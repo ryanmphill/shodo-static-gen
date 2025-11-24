@@ -36,7 +36,7 @@ class PaginationHandler:
         """
         Handle pagination for a template that requires it.
         """
-        supported_pagination_types = ["shodo_get_articles"]
+        supported_pagination_types = ["shodo_get_articles", "shodo_query_store"]
         if front_matter.get("paginate") not in supported_pagination_types:
             raise ValueError(
                 f"Pagination requested in {template.filename} but 'paginate' value is not "
@@ -67,7 +67,12 @@ class PaginationHandler:
             pagination_filters.pop("offset", None)
             pagination_filters.pop("limit", None)
 
-        all_items = self.api.shodo_get_articles(filters=pagination_filters)
+        all_items = []
+        if front_matter.get("paginate") == "shodo_get_articles":
+            all_items = self.api.shodo_get_articles(filters=pagination_filters)
+        elif front_matter.get("paginate") == "shodo_query_store":
+            all_items = self.api.shodo_query_store(filters=pagination_filters)
+
         total_items = len(all_items)
         total_pages = (total_items + items_per_page - 1) // items_per_page
         total_pages = max(total_pages, 1)
@@ -291,6 +296,8 @@ class PaginationHandler:
 
         if query_to_paginate == "shodo_get_articles":
             return self._extract_article_query_filters(content)
+        if query_to_paginate == "shodo_query_store":
+            return self._extract_store_query_filters(content)
         return None
 
     def _extract_article_query_filters(self, content) -> Optional[dict]:
@@ -298,7 +305,21 @@ class PaginationHandler:
         Extract pagination filters from the template source file by parsing
         the 'shodo_get_articles' function call arguments.
         """
-        pattern = r"shodo_get_articles\s*\(\s*(?:filters\s*=\s*)?(\{.*?\})\s*\)"
+        return self._extract_query_filters(content, "shodo_get_articles")
+
+    def _extract_store_query_filters(self, content) -> Optional[dict]:
+        """
+        Extract pagination filters from the template source file by parsing
+        the 'shodo_query_store' function call arguments.
+        """
+        return self._extract_query_filters(content, "shodo_query_store")
+
+    def _extract_query_filters(self, content, function_name) -> Optional[dict]:
+        """
+        Extract pagination filters from the template source file by parsing
+        the specified function call arguments.
+        """
+        pattern = rf"{function_name}\s*\(\s*(?:filters\s*=\s*)?(\{{.*?\}})\s*\)"
         match = re.search(pattern, content, re.DOTALL)
         if match:
             filters_str = match.group(1)
@@ -312,14 +333,14 @@ class PaginationHandler:
                 filters_dict = self.context.json_loader.json_to_dict(formatted_json)
 
                 if not isinstance(filters_dict, dict):
-                    raise ValueError("Failed to parse filters in shodo_get_articles.")
+                    raise ValueError(f"Failed to parse filters in {function_name}.")
                 return filters_dict
             except ValueError as e:
                 logging.error("Error parsing pagination filters from template: %s", e)
                 return None
         else:
             raise ValueError(
-                "Could not find 'shodo_get_articles' function call in template for pagination."
+                f"Could not find '{function_name}' function call in template for pagination."
             )
 
     def _format_filter_string_to_json(self, filter_str: str) -> str:
@@ -383,6 +404,13 @@ class PaginationHandler:
 
         # Step 4: Unquote numeric and boolean values
         result = re.sub(r'"\s*(-?\d+(?:\.\d+)?)\s*"', r"\1", result)
+        # Change standalone true/false to True/False
+        result = re.sub(
+            r'"\s*(true|false)\s*"',
+            lambda m: m.group(1).capitalize(),
+            result,
+            flags=re.IGNORECASE,
+        )
         result = re.sub(r'"\s*(True|False)\s*"', r"\1", result, flags=re.IGNORECASE)
         result = re.sub(r'"\s*(\[|\]|\{|\})\s*"', r"\1", result)
 

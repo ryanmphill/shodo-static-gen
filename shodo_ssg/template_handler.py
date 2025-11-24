@@ -134,7 +134,8 @@ class TemplateHandler:
                 md_page["name"].strip("/"),
             )
 
-            self.context.update_render_arg("article", md_page["html"])
+            article_data = self.context.format_md_page_data(md_page)
+            self.context.update_render_arg("article", article_data)
 
             front_matter = md_page["front_matter"]
 
@@ -150,6 +151,7 @@ class TemplateHandler:
                 os.makedirs(build_path)
 
             self._write_html_from_template(layout_template, f"{build_path}/index.html")
+            self.context.update_render_arg("article", {})
 
     def get_md_layout_template(self, url_segment: str):
         """
