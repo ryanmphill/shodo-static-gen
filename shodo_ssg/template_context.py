@@ -99,8 +99,8 @@ class TemplateContext:
         if not isinstance(front_matter, dict):
             front_matter = {}
 
-        url_origin = self.render_args.get("url_origin", "")
-        tz = self.render_args.get("timezone", None)
+        url_origin = self.render_args.get("config", {}).get("url_origin", "")
+        tz = self.render_args.get("config", {}).get("timezone", None)
 
         link = ""
         if url_origin:
@@ -194,7 +194,7 @@ class TemplateContext:
         """
         try:
             utc_datetime = utc_datetime.replace(tzinfo=ZoneInfo("UTC"))
-            local_timezone = ZoneInfo(tz)  # Change to your local timezone
+            local_timezone = ZoneInfo(tz)
             local_datetime = utc_datetime.astimezone(local_timezone)
             return local_datetime
         except Exception as e:

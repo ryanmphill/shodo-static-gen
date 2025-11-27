@@ -179,3 +179,33 @@ def test_build_static_site_paginates_items_from_json_store(
     assert os.path.isfile(items_page_1)
     assert os.path.isfile(items_page_2)
     assert os.path.isfile(items_page_3)
+
+
+def test_abs_urls_in_rss_final_build(
+    temp_project_path,
+    template_handler_dependencies,
+):
+    """Test that all URLs in the RSS feed are absolute in the final build."""
+    tmp_proj_root = os.path.abspath(temp_project_path)
+    settings, _root_layout_builder, _pagination_handler, _api = (
+        template_handler_dependencies
+    )
+
+    build_path = os.path.abspath(settings["build_dir"])
+
+    if os.path.exists(build_path):
+        shutil.rmtree(build_path)
+    assert not os.path.exists(build_path)
+
+    build_static_site(tmp_proj_root)
+
+    rss_feed_path = os.path.join(build_path, "feed.xml")
+    assert os.path.exists(rss_feed_path)
+
+    with open(rss_feed_path, "r", encoding="utf-8") as f:
+        rss_content = f.read()
+
+    # Check that all URLs in the RSS feed are absolute
+    assert '<a href="https://shodo.dev/' in rss_content
+    assert '<a href="/' not in rss_content
+    assert 'src="/' not in rss_content

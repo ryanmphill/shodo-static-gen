@@ -19,10 +19,12 @@ class TestHTMLRootLayoutBuilder:
     def minimal_render_args(self):
         """Fixture providing minimal render arguments"""
         return {
-            "metadata": {
-                "title": "Test Site",
-                "charset": "UTF-8",
-                "lang": "en",
+            "config": {
+                "metadata": {
+                    "title": "Test Site",
+                    "charset": "UTF-8",
+                    "lang": "en",
+                }
             }
         }
 
@@ -30,30 +32,32 @@ class TestHTMLRootLayoutBuilder:
     def full_render_args(self):
         """Fixture providing complete render arguments with all metadata"""
         return {
-            "metadata": {
-                "title": "Test Site",
-                "charset": "UTF-8",
-                "lang": "en",
-                "description": "A test site description",
-                "keywords": ["test", "ssg", "python"],
-                "author": "Test Author",
-                "theme_color": "#ffffff",
-                "og_image": "https://example.com/image.jpg",
-                "og_image_alt": "Test image",
-                "og_title": "Test OG Title",
-                "og_description": "Test OG Description",
-                "og_url": "https://example.com",
-                "og_type": "website",
-                "og_site_name": "Test Site",
-                "og_locale": "en_US",
-                "canonical": "https://example.com/canonical",
-                "google_font_link": "https://fonts.googleapis.com/css2?family=Roboto",
-                "preconnects": ["https://example.com", "https://cdn.example.com"],
-                "stylesheets": ["/styles/custom.css", "/styles/theme.css"],
-                "robots": "index, follow",
-                "head_extra": ['<meta name="custom" content="value">'],
-                "body_id": "main-page",
-                "body_class": "home-page active",
+            "config": {
+                "metadata": {
+                    "title": "Test Site",
+                    "charset": "UTF-8",
+                    "lang": "en",
+                    "description": "A test site description",
+                    "keywords": ["test", "ssg", "python"],
+                    "author": "Test Author",
+                    "theme_color": "#ffffff",
+                    "og_image": "https://example.com/image.jpg",
+                    "og_image_alt": "Test image",
+                    "og_title": "Test OG Title",
+                    "og_description": "Test OG Description",
+                    "og_url": "https://example.com",
+                    "og_type": "website",
+                    "og_site_name": "Test Site",
+                    "og_locale": "en_US",
+                    "canonical": "https://example.com/canonical",
+                    "google_font_link": "https://fonts.googleapis.com/css2?family=Roboto",
+                    "preconnects": ["https://example.com", "https://cdn.example.com"],
+                    "stylesheets": ["/styles/custom.css", "/styles/theme.css"],
+                    "robots": "index, follow",
+                    "head_extra": ['<meta name="custom" content="value">'],
+                    "body_id": "main-page",
+                    "body_class": "home-page active",
+                }
             }
         }
 
@@ -89,6 +93,25 @@ class TestHTMLRootLayoutBuilder:
         assert "<title>Page Title</title>" in result
         assert '<meta name="description" content="Page description">' in result
         assert '<html lang="fr">' in result
+
+    def test_get_doc_head_applies_global_metadata_defaults(
+        self, builder: HTMLRootLayoutBuilder
+    ):
+        """Test that global metadata defaults are applied when missing"""
+        render_args = {
+            "config": {
+                "metadata": {
+                    "title": "Test Site",
+                    "description": "A test site description",
+                }
+            }
+        }
+        result = builder.get_doc_head(render_args)
+        # Strip all newlines and extra spaces for easier assertions
+        result = " ".join(result.split())
+
+        assert "<title>Test Site</title>" in result
+        assert '<meta name="description" content="A test site description">' in result
 
     def test_get_doc_head_with_body_attributes(
         self, builder: HTMLRootLayoutBuilder, minimal_render_args

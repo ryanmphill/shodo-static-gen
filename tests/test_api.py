@@ -522,7 +522,8 @@ class TestAPI:
 
     def test_rel_to_abs_uses_context_url_origin(self, api: API):
         """Test rel_to_abs uses url_origin from context when base_url not provided"""
-        api.context.render_args["url_origin"] = "https://mysite.com"
+        api.context.render_args["config"] = {}
+        api.context.render_args["config"]["url_origin"] = "https://mysite.com"
         html = '<a href="/page">Link</a>'
         result = api.rel_to_abs(html)
 

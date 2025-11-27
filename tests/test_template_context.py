@@ -1,5 +1,7 @@
 """Tests for the template_context module."""
 
+from datetime import datetime
+from zoneinfo import ZoneInfo
 from shodo_ssg.template_context import TemplateContext
 
 
@@ -28,10 +30,13 @@ def test_template_context_render_args(
 
     assert template_context.render_args
     assert isinstance(template_context.render_args, dict)
-    assert "metadata" in template_context.render_args
-    assert "title" in template_context.render_args["metadata"]
-    assert "description" in template_context.render_args["metadata"]
-    assert "author" in template_context.render_args["metadata"]
+    assert "config" in template_context.render_args
+    assert "metadata" in template_context.render_args["config"]
+    assert "title" in template_context.render_args["config"]["metadata"]
+    assert "description" in template_context.render_args["config"]["metadata"]
+    assert "author" in template_context.render_args["config"]["metadata"]
+    assert "url_origin" in template_context.render_args["config"]
+    assert "timezone" in template_context.render_args["config"]
     assert "short" in template_context.render_args
     assert "collections" in template_context.render_args
     assert "another_short" in template_context.render_args["collections"]
@@ -103,6 +108,7 @@ def test_format_md_page_data_complete(
             "draft": False,
             "image": "/images/first.jpg",
             "image_alt": "First post image",
+            "published_datetime": "2025-01-15T10:00:00Z",
         },
     }
 
@@ -119,11 +125,23 @@ def test_format_md_page_data_complete(
     assert result["author"] == "John Doe"
     assert result["category"] == "technology"
     assert result["tags"] == ["python", "web"]
-    assert result["date"].strftime('%Y-%m-%d') == "2025-01-15"
+    assert result["date"].strftime("%Y-%m-%d") == "2025-01-15"
     assert result["draft"] is False
     assert result["image"] == "/images/first.jpg"
     assert result["image_alt"] == "First post image"
     assert result["content"] == "<p>First post content</p>"
+    assert result["published_datetime"] == datetime.strptime(
+        "2025-01-15T10:00:00Z", "%Y-%m-%dT%H:%M:%SZ"
+    )
+    assert result["published_dt_local"].strftime(
+        "%Y-%m-%d %H:%M:%S %Z%z"
+    ) == datetime.strptime("2025-01-15T10:00:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=ZoneInfo("UTC")
+    ).astimezone(
+        ZoneInfo("America/Chicago")
+    ).strftime(
+        "%Y-%m-%d %H:%M:%S %Z%z"
+    )
 
 
 def test_format_md_page_data_minimal(

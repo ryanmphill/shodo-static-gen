@@ -27,10 +27,12 @@ For example, to access the `title` value from `/store/config.json`:
 
 ```json
 {
-    "metadata": {
-        "title": "Shodo - A Static Site Generator",
-        "description": "Generates a static site",
-        "author": "Shodo"
+    "config": {
+        "metadata": {
+            "title": "Shodo - A Static Site Generator",
+            "description": "Generates a static site",
+            "author": "Shodo"
+        }
     }
 }
 ```
@@ -38,5 +40,5 @@ For example, to access the `title` value from `/store/config.json`:
 in the template, you would use the following syntax:
 
 ```
-{{ metadata.title }}
+{{ config.metadata.title }}
 ```

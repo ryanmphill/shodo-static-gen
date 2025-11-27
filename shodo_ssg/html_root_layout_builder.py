@@ -18,7 +18,7 @@ class HTMLRootLayoutBuilder:
         """
         Generate the HTML head section for a document, including opening body tag.
         """
-        global_metadata: dict = render_args.get("metadata", {})
+        global_metadata: dict = render_args.get("config", {}).get("metadata", {})
         if front_matter is None:
             front_matter = {}
 

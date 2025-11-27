@@ -324,7 +324,9 @@ class API:
         based on the given base URL origin.
         """
         if base_url_origin is None:
-            base_url_origin = self.context.render_args.get("url_origin", "")
+            base_url_origin = self.context.render_args.get("config", {}).get(
+                "url_origin", ""
+            )
 
         if not base_url_origin:
             return html_content
