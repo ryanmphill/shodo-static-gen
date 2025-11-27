@@ -2,7 +2,7 @@
 Tests for the API class
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import Mock
 import pytest
 from shodo_ssg.api import API
@@ -189,9 +189,11 @@ class TestAPI:
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 3
-        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-02-20"  # Most recent first
-        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-15"
-        assert result[2]["date"].strftime('%Y-%m-%d') == "2025-01-01"
+        assert (
+            result[0]["date"].strftime("%Y-%m-%d") == "2025-02-20"
+        )  # Most recent first
+        assert result[1]["date"].strftime("%Y-%m-%d") == "2025-01-15"
+        assert result[2]["date"].strftime("%Y-%m-%d") == "2025-01-01"
 
     def test_shodo_get_articles_order_by_title(self, api: API):
         """Test ordering articles by title (ascending)"""
@@ -208,8 +210,8 @@ class TestAPI:
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
-        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-02-20"
-        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-15"
+        assert result[0]["date"].strftime("%Y-%m-%d") == "2025-02-20"
+        assert result[1]["date"].strftime("%Y-%m-%d") == "2025-01-15"
 
     def test_shodo_get_articles_with_offset(self, api: API):
         """Test offsetting returned articles"""
@@ -217,8 +219,8 @@ class TestAPI:
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 2
-        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-01-15"
-        assert result[1]["date"].strftime('%Y-%m-%d') == "2025-01-01"
+        assert result[0]["date"].strftime("%Y-%m-%d") == "2025-01-15"
+        assert result[1]["date"].strftime("%Y-%m-%d") == "2025-01-01"
 
     def test_shodo_get_articles_with_offset_and_limit(self, api: API):
         """Test combining offset and limit"""
@@ -226,7 +228,7 @@ class TestAPI:
         result = api.shodo_get_articles(filters)
 
         assert len(result) == 1
-        assert result[0]["date"].strftime('%Y-%m-%d') == "2025-01-15"
+        assert result[0]["date"].strftime("%Y-%m-%d") == "2025-01-15"
 
     def test_shodo_get_articles_multiple_filters(self, api: API):
         """Test combining multiple filters"""
@@ -434,3 +436,174 @@ class TestAPI:
         assert "<section>" not in result
         assert "First paragraph" in result
         assert "Second paragraph" in result
+
+    # Tests for get_rfc822
+    def test_get_rfc822_with_valid_datetime(self, api: API):
+        """Test get_rfc822 with a valid datetime object"""
+        dt = datetime(2025, 1, 15, 14, 30, 0)
+        result = api.get_rfc822(dt)
+
+        assert result == "Wed, 15 Jan 2025 14:30:00 +0000"
+
+    def test_get_rfc822_with_string_input(self, api: API, caplog):
+        """Test get_rfc822 with string input returns minimal date and logs warning"""
+        result = api.get_rfc822("2025-01-15")
+
+        assert "1000" in result  # Year should be 1000 (minimal date)
+        assert "[warn] get_rfc822 received a string instead of datetime" in caplog.text
+
+    def test_get_rfc822_with_none_input(self, api: API, caplog):
+        """Test get_rfc822 with None input returns minimal date and logs warning"""
+        result = api.get_rfc822(None)
+
+        assert "1000" in result  # Year should be 1000 (minimal date)
+        assert "[warn] get_rfc822 received None instead of datetime" in caplog.text
+
+    def test_get_rfc822_format_correctness(self, api: API):
+        """Test that get_rfc822 produces correct RFC 822 format"""
+        dt = datetime(2025, 12, 25, 23, 59, 59)
+        result = api.get_rfc822(dt)
+
+        # Check format: Day, DD Mon YYYY HH:MM:SS +0000
+        assert result == "Thu, 25 Dec 2025 23:59:59 +0000"
+        assert result.endswith("+0000")  # Should always be UTC
+
+    def test_get_rfc822_with_leap_year(self, api: API):
+        """Test get_rfc822 with leap year date"""
+        dt = datetime(2024, 2, 29, 12, 0, 0)
+        result = api.get_rfc822(dt)
+
+        assert result == "Thu, 29 Feb 2024 12:00:00 +0000"
+
+    # Tests for rel_to_abs
+    def test_rel_to_abs_with_href_links(self, api: API):
+        """Test converting relative href URLs to absolute"""
+        html = '<a href="/blog/post">Link</a><a href="/about">About</a>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/blog/post"' in result
+        assert 'href="https://example.com/about"' in result
+
+    def test_rel_to_abs_with_src_attributes(self, api: API):
+        """Test converting relative src URLs to absolute"""
+        html = '<img src="/images/photo.jpg"><script src="/js/main.js"></script>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'src="https://example.com/images/photo.jpg"' in result
+        assert 'src="https://example.com/js/main.js"' in result
+
+    def test_rel_to_abs_preserves_absolute_urls(self, api: API):
+        """Test that absolute URLs are not modified"""
+        html = '<a href="https://other.com/page">External</a>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://other.com/page"' in result
+
+    def test_rel_to_abs_preserves_anchor_links(self, api: API):
+        """Test that anchor links (#section) are not modified"""
+        html = '<a href="#section">Jump</a>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="#section"' in result
+
+    def test_rel_to_abs_with_no_base_url(self, api: API):
+        """Test rel_to_abs with no base URL returns original content"""
+        html = '<a href="/blog">Link</a>'
+        result = api.rel_to_abs(html, None)
+
+        assert result == html
+
+    def test_rel_to_abs_with_empty_base_url(self, api: API):
+        """Test rel_to_abs with empty base URL returns original content"""
+        html = '<a href="/blog">Link</a>'
+        result = api.rel_to_abs(html, "")
+
+        assert result == html
+
+    def test_rel_to_abs_uses_context_url_origin(self, api: API):
+        """Test rel_to_abs uses url_origin from context when base_url not provided"""
+        api.context.render_args["url_origin"] = "https://mysite.com"
+        html = '<a href="/page">Link</a>'
+        result = api.rel_to_abs(html)
+
+        assert 'href="https://mysite.com/page"' in result
+
+    def test_rel_to_abs_preserves_code_blocks(self, api: API):
+        """Test that URLs in code blocks are not modified"""
+        html = """
+        <p>Check out <a href="/api">our API</a></p>
+        <code>fetch('/api/data')</code>
+        <pre>curl https://example.com/api</pre>
+        """
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/api"' in result
+        assert "fetch('/api/data')" in result  # Should not be modified
+        assert "curl https://example.com/api" in result  # Should not be modified
+
+    def test_rel_to_abs_with_single_and_double_quotes(self, api: API):
+        """Test rel_to_abs handles both single and double quoted attributes"""
+        html = "<a href='/blog'>Link1</a><a href=\"/about\">Link2</a>"
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/blog"' in result
+        assert 'href="https://example.com/about"' in result
+
+    def test_rel_to_abs_with_query_parameters(self, api: API):
+        """Test rel_to_abs preserves query parameters"""
+        html = '<a href="/search?q=test&page=2">Search</a>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/search?q=test&page=2"' in result
+
+    def test_rel_to_abs_with_fragments(self, api: API):
+        """Test rel_to_abs preserves URL fragments"""
+        html = '<a href="/page#section">Link</a>'
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/page#section"' in result
+
+    def test_rel_to_abs_complex_html(self, api: API):
+        """Test rel_to_abs with complex nested HTML"""
+        html = """
+        <article>
+            <h1><a href="/blog/post-1">Post Title</a></h1>
+            <img src="/images/hero.jpg" alt="Hero">
+            <p>Read more at <a href="/blog">our blog</a>.</p>
+            <code>const url = '/api/data';</code>
+        </article>
+        """
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert 'href="https://example.com/blog/post-1"' in result
+        assert 'src="https://example.com/images/hero.jpg"' in result
+        assert 'href="https://example.com/blog"' in result
+        assert "const url = '/api/data';" in result  # Code should not be modified
+
+    def test_rel_to_abs_with_nested_code_and_pre(self, api: API):
+        """Test that nested code and pre blocks are preserved"""
+        html = """
+        <pre><code>
+        <a href="/test">Don't modify this</a>
+        <img src="/image.jpg">
+        </code></pre>
+        <a href="/real-link">But modify this</a>
+        """
+        result = api.rel_to_abs(html, "https://example.com")
+
+        assert '<a href="/test">Don\'t modify this</a>' in result
+        assert '<img src="/image.jpg">' in result
+        assert 'href="https://example.com/real-link"' in result
+
+    # Tests for current_dt
+    def test_current_dt_returns_datetime(self, api: API):
+        """Test current_dt returns a datetime object"""
+        result = api.current_dt()
+
+        assert isinstance(result, datetime)
+
+    def test_current_dt_is_utc(self, api: API):
+        """Test current_dt returns UTC timezone"""
+        result = api.current_dt()
+
+        assert result.tzinfo == timezone.utc

@@ -3,11 +3,7 @@
     "title": "Shodo - A Static Site Generator - Home",
     "description": "Home page of the site",
     "keywords": ["home", "site", "example"],
-    "author": "Your Name",
-    "head_extra": [
-        "<!--<link rel='stylesheet' href='/static/css/custom.css'>-->",
-        "<!--<script src='/static/js/custom.js'></script>-->"
-    ]
+    "author": "Your Name"
 }
 @endfrontmatter
 
@@ -26,17 +22,6 @@
     </article>
     <section>
         {% include 'another_template.jinja' %}
-    </section>
-    <section>
-        {% from 'loop_template.jinja' import loop_template as loop_template %}
-        {{ loop_template(list_of_words) }}
-    </section>
-    <section>
-        <h2>JavaScript</h2>
-
-        <div id="helloJavaScript">
-            {# HTML rendered by JavaScript #}
-        </div>
     </section>
     <section>
         <h2>Getting Started</h2>

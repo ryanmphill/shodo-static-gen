@@ -119,3 +119,63 @@ def test_build_static_site(temp_project_path, template_handler_dependencies):
     assert css_exist_in_build_dir(build_path)
     assert images_exist_in_build_dir(build_path)
     assert favicon_exists_in_build_dir(build_path)
+
+
+def test_build_static_site_paginates_articles(
+    temp_project_path, template_handler_dependencies
+):
+    """Test that build_static_site paginates articles correctly."""
+    tmp_proj_root = os.path.abspath(temp_project_path)
+    settings, _root_layout_builder, _pagination_handler, _api = (
+        template_handler_dependencies
+    )
+
+    build_path = os.path.abspath(settings["build_dir"])
+
+    if os.path.exists(build_path):
+        shutil.rmtree(build_path)
+    assert not os.path.exists(build_path)
+
+    build_static_site(tmp_proj_root)
+
+    # Check that paginated article pages exist
+    articles_page_1 = os.path.join(build_path, "blog", "index.html")
+    articles_page_2 = os.path.join(build_path, "blog", "page", "2", "index.html")
+
+    assert os.path.exists(articles_page_1)
+    assert os.path.exists(articles_page_2)
+    assert os.path.isdir(os.path.join(build_path, "blog", "page", "2"))
+    assert os.path.isfile(articles_page_1)
+    assert os.path.isfile(articles_page_2)
+
+
+def test_build_static_site_paginates_items_from_json_store(
+    temp_project_path, template_handler_dependencies
+):
+    """Test that build_static_site paginates json data correctly."""
+    tmp_proj_root = os.path.abspath(temp_project_path)
+    settings, _root_layout_builder, _pagination_handler, _api = (
+        template_handler_dependencies
+    )
+
+    build_path = os.path.abspath(settings["build_dir"])
+
+    if os.path.exists(build_path):
+        shutil.rmtree(build_path)
+    assert not os.path.exists(build_path)
+
+    build_static_site(tmp_proj_root)
+
+    # Check that paginated article pages exist
+    items_page_1 = os.path.join(build_path, "items", "index.html")
+    items_page_2 = os.path.join(build_path, "items", "page", "2", "index.html")
+    items_page_3 = os.path.join(build_path, "items", "page", "3", "index.html")
+
+    assert os.path.exists(items_page_1)
+    assert os.path.exists(items_page_2)
+    assert os.path.exists(items_page_3)
+    assert os.path.isdir(os.path.join(build_path, "items", "page", "2"))
+    assert os.path.isdir(os.path.join(build_path, "items", "page", "3"))
+    assert os.path.isfile(items_page_1)
+    assert os.path.isfile(items_page_2)
+    assert os.path.isfile(items_page_3)

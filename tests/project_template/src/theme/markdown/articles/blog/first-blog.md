@@ -3,7 +3,9 @@
     "title": "This is the first Blog Title!",
     "category": "general",
     "body_class": "blog-page first-blog",
-    "description": "This is the first blog description"
+    "description": "This is the first blog description",
+    "tags": ["one", "two","three"],
+    "published_datetime": "2025-11-01T05:03:52Z"
 }
 @endfrontmatter
 
