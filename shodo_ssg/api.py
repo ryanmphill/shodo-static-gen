@@ -1,8 +1,9 @@
 """API functions to expose to templates."""
 
+import logging
 import re
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timezone
+from typing import Optional, Union
 from shodo_ssg.front_matter_processor import FrontMatterProcessor
 from shodo_ssg.template_context import TemplateContext
 
@@ -229,13 +230,57 @@ class API:
 
         order_by = filters["order_by"]
 
+        def dt_normalize(key, val, file_path):
+            """Normalize datetime values for sorting."""
+            date_fields = ["published_datetime", "modified_datetime", "date"]
+            if key in date_fields and not isinstance(val, datetime):
+                if val is None:
+                    logging.warning(
+                        "[warn] Sorting by date field '%s' received a None value. "
+                        + "No '%s' set in '%s'. "
+                        + "Returning minimal date.",
+                        key,
+                        key,
+                        file_path,
+                    )
+                    return datetime.min
+                if isinstance(val, str):
+                    if val.strip() == "":
+                        logging.warning(
+                            "[warn] Sorting by date field '%s' received a string instead of "
+                            + "datetime. Check date formatting in '%s'. Returning minimal date.",
+                            key,
+                            file_path,
+                        )
+                        # Return minimal datetime for empty strings
+                        return datetime.min
+                    try:
+                        return datetime.strptime(val, "%Y-%m-%dT%H:%M:%SZ")
+                    except (ValueError, TypeError):
+                        try:
+                            return datetime.strptime(val, "%Y-%m-%d")
+                        except ValueError:
+                            return val
+            return val
+
         if order_by.get("asc") is not None:
             order_key = order_by["asc"]
-            return sorted(data, key=lambda x: x[order_key])
+            return sorted(
+                data,
+                key=lambda x: dt_normalize(
+                    order_key, x.get(order_key, None), x.get("path")
+                ),
+            )
 
         if order_by.get("desc") is not None:
             order_key = order_by["desc"]
-            return sorted(data, key=lambda x: x[order_key], reverse=True)
+            return sorted(
+                data,
+                key=lambda x: dt_normalize(
+                    order_key, x.get(order_key, None), x.get("path")
+                ),
+                reverse=True,
+            )
 
         return data
 
@@ -252,3 +297,70 @@ class API:
             result = result[:limit]
 
         return result
+
+    def get_rfc822(self, dt: Union[datetime, str, None]) -> str:
+        """Returns a datetime formatted as an RFC 822 date string."""
+        if isinstance(dt, str):
+            dt = datetime.min
+            # Set year to 1900 to avoid issues with strftime
+            dt = dt.replace(year=1000)
+            logging.warning(
+                "[warn] get_rfc822 received a string instead of datetime. Returning minimal date."
+            )
+        if dt is None:
+            dt = datetime.min
+            logging.warning(
+                "[warn] get_rfc822 received None instead of datetime. Returning minimal date."
+            )
+            # Set year to 1900 to avoid issues with strftime
+            dt = dt.replace(year=1000)
+        return dt.strftime("%a, %d %b %Y %H:%M:%S +0000")
+
+    def rel_to_abs(
+        self, html_content: str, base_url_origin: Optional[str] = None
+    ) -> str:
+        """
+        Converts relative URLs in the provided HTML content to absolute URLs
+        based on the given base URL origin.
+        """
+        if base_url_origin is None:
+            base_url_origin = self.context.render_args.get("url_origin", "")
+
+        if not base_url_origin:
+            return html_content
+
+        # Temporarily replace anything in <code> or <pre> tags to avoid modifying them
+        pre_code_patterns = re.findall(
+            r"(<(code|pre)[^>]*>.*?<\/\2>)", html_content, re.DOTALL
+        )
+        placeholders = {}
+        for i, (full_match, _) in enumerate(pre_code_patterns):
+            placeholder = f"__PLACEHOLDER_{i}__"
+            placeholders[placeholder] = full_match
+            html_content = html_content.replace(full_match, placeholder)
+
+        # Regex patterns to find relative URLs in href and src attributes
+        href_pattern = r'href=["\'](\/[^"\']*)["\']'
+        src_pattern = r'src=["\'](\/[^"\']*)["\']'
+
+        # Replace relative URLs with absolute URLs
+        html_content = re.sub(
+            href_pattern,
+            lambda match: f'href="{base_url_origin}{match.group(1)}"',
+            html_content,
+        )
+        html_content = re.sub(
+            src_pattern,
+            lambda match: f'src="{base_url_origin}{match.group(1)}"',
+            html_content,
+        )
+
+        # Restore the original <code> and <pre> content
+        for placeholder, original in placeholders.items():
+            html_content = html_content.replace(placeholder, original)
+
+        return html_content
+
+    def current_dt(self) -> datetime:
+        """Returns the current UTC datetime during build."""
+        return datetime.now(timezone.utc)

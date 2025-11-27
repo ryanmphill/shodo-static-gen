@@ -155,7 +155,9 @@ def test_format_md_page_data_minimal(
     assert result["author"] == ""
     assert result["category"] == ""
     assert result["tags"] == []
-    assert result["date"] == ""
+    assert result["date"] is None
+    assert result["published_datetime"] is None
+    assert result["published_dt_local"] is None
     assert result["draft"] is False
     assert result["image"] == ""
     assert result["image_alt"] == ""

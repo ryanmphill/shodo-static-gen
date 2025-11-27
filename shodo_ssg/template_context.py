@@ -113,19 +113,19 @@ class TemplateContext:
         post["author"] = front_matter.get("author", "")
         post["category"] = front_matter.get("category", "")
         post["tags"] = front_matter.get("tags", [])
-        post["date"] = front_matter.get("date", "")
-        post["published_datetime"] = front_matter.get("published_datetime", "")
-        post["published_dt_local"] = ""
+        post["date"] = front_matter.get("date", None)
+        post["published_datetime"] = front_matter.get("published_datetime", None)
+        post["published_dt_local"] = None
         post["draft"] = front_matter.get("draft", False)
         post["image"] = front_matter.get("image", "")
         post["image_alt"] = front_matter.get("image_alt", "")
         post["content"] = md_page["html"]
-        post["modified_datetime"] = front_matter.get("modified_datetime", "")
-        post["modified_dt_local"] = ""
+        post["modified_datetime"] = front_matter.get("modified_datetime", None)
+        post["modified_dt_local"] = None
         post["extra"] = front_matter.get("extra", {})
         post["link"] = link
 
-        utc_pub_datetime = front_matter.get("published_datetime", "")
+        utc_pub_datetime = front_matter.get("published_datetime", None)
         if utc_pub_datetime:
             post["published_datetime"] = self._get_date_object_from_utc(
                 utc_pub_datetime, post["path"]
@@ -134,7 +134,7 @@ class TemplateContext:
                 post["published_dt_local"] = self._get_local_datetime_from_utc(
                     post["published_datetime"], tz, post["path"]
                 )
-        utc_mod_datetime = front_matter.get("modified_datetime", "")
+        utc_mod_datetime = front_matter.get("modified_datetime", None)
 
         if utc_mod_datetime:
             post["modified_datetime"] = self._get_date_object_from_utc(
@@ -144,7 +144,7 @@ class TemplateContext:
                 post["modified_dt_local"] = self._get_local_datetime_from_utc(
                     post["modified_datetime"], tz, post["path"]
                 )
-        date = front_matter.get("date", "")
+        date = front_matter.get("date", None)
         if date:
             post["date"] = self._get_date_object_from_string(date, post["path"])
 

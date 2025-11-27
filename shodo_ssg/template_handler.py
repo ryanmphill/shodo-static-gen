@@ -9,6 +9,7 @@ from typing import Optional
 from jinja2 import (
     Environment,
     FileSystemLoader,
+    Template,
 )
 
 from shodo_ssg.api import API
@@ -33,7 +34,9 @@ class TemplateHandler:
         Initialize the TemplateHandler with the paths to the template directories.
         """
         self.template_env = Environment(
-            loader=FileSystemLoader(searchpath=settings["template_paths"])
+            loader=FileSystemLoader(searchpath=settings["template_paths"]),
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.build_dir = settings["build_dir"]
         self.root_path = settings["root_path"]
@@ -56,43 +59,73 @@ class TemplateHandler:
             "\033[94mWriting html from %s to %s...\033[0m", page_name, destination
         )
 
-    def _write_html_from_template(
-        self, template_name, destination_dir, front_matter: Optional[dict] = None
+    def _process_template(
+        self, template_name, destination_dir: str, front_matter: Optional[dict] = None
     ):
         """
-        Render a template with the provided arguments and write the output to a file.
+        Prepares and writes a template to the specified destination
         """
-        self._log_info(template_name, destination_dir)
         template = self.get_template(template_name)
         template_path = os.path.abspath(template.filename)
         if front_matter is None:
             front_matter = self.get_front_matter(template_path)
 
+        file_type = front_matter.get("file_type", "html")
+        suffix = "/index.html"
+        if file_type == "xml":
+            suffix = ".xml"
+
+        destination_path = f"{destination_dir.rstrip('/')}{suffix}"
+        self._log_info(template_name, destination_path)
+
         if front_matter and front_matter.get("paginate", False):
             self.pagination_handler.handle_pagination(
-                template_path, template, destination_dir, front_matter=front_matter
+                template_path, template, destination_path, front_matter=front_matter
             )
             return
 
-        with open(destination_dir, "w", encoding="utf-8") as output_file:
+        if file_type == "xml":
+            self._write_xml_file(template, destination_path, front_matter)
+        else:
+            self._write_html_file(template, destination_path, front_matter)
+
+        self.context.front_matter_processor.clear_front_matter(destination_path)
+
+    def _write_html_file(
+        self, template: Template, destination_path, front_matter: dict
+    ):
+        """
+        Render a template as HTML and write it to a file.
+        """
+        doc_head = ""
+        doc_tail = ""
+        if not front_matter.get("no_wrapper", False):
+            doc_head = self.root_layout_builder.get_doc_head(
+                render_args=self.context.render_args, front_matter=front_matter
+            )
+            doc_tail = self.root_layout_builder.get_doc_tail()
+        with open(destination_path, "w", encoding="utf-8") as output_file:
             output_file.write(
-                self.root_layout_builder.get_doc_head(
-                    render_args=self.context.render_args, front_matter=front_matter
-                )
-                + template.render(self.context.render_args)
-                + "\n"
-                + self.root_layout_builder.get_doc_tail()
+                doc_head + template.render(self.context.render_args) + "\n" + doc_tail
             )
 
-        self.context.front_matter_processor.clear_front_matter(destination_dir)
+    def _write_xml_file(self, template: Template, destination_path, front_matter: dict):
+        """
+        Render a template as XML and write it to a file.
+        """
+        declaration = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        if front_matter.get("no_wrapper", False):
+            declaration = ""
+        with open(destination_path, "w", encoding="utf-8") as output_file:
+            output_file.write(
+                declaration + template.render(self.context.render_args).strip()
+            )
 
     def write_home_template(self):
         """
         Write the index.html file using the provided render arguments.
         """
-        return self._write_html_from_template(
-            "home.jinja", f"{self.build_dir}/index.html"
-        )
+        return self._process_template("home.jinja", f"{self.build_dir}")
 
     def write_linked_template_pages(self, nested_dirs=""):
         """
@@ -111,8 +144,8 @@ class TemplateHandler:
                     page_name = nested_dirs + os.path.splitext(path)[0]
                     if not os.path.exists(f"{self.build_dir}/{page_name}"):
                         os.makedirs(f"{self.build_dir}/{page_name}")
-                    self._write_html_from_template(
-                        template_name, f"{self.build_dir}/{page_name}/index.html"
+                    self._process_template(
+                        template_name, f"{self.build_dir}/{page_name}"
                     )
                 path_from_root = os.path.join(self.root_path, pages_src_dir + path)
                 # If directory, recursively create a nested route
@@ -150,7 +183,7 @@ class TemplateHandler:
             if not os.path.exists(build_path):
                 os.makedirs(build_path)
 
-            self._write_html_from_template(layout_template, f"{build_path}/index.html")
+            self._process_template(layout_template, f"{build_path}")
             self.context.update_render_arg("article", {})
 
     def get_md_layout_template(self, url_segment: str):
@@ -219,6 +252,9 @@ class TemplateHandler:
                 self.api.shodo_get_articles,
                 self.api.shodo_query_store,
                 self.api.shodo_get_excerpt,
+                self.api.get_rfc822,
+                self.api.rel_to_abs,
+                self.api.current_dt,
             ]
         )
         self.write_article_pages()
