@@ -1,0 +1,12 @@
+{
+    "root_template_paths": [
+        "src/theme/views"
+    ],
+    "markdown_path": "src/theme/markdown",
+    "json_config_path": "src/store",
+    "favicon_path": "src/favicon.ico",
+    "scripts_path": "src/theme/static/scripts",
+    "images_path": "src/theme/static/images",
+    "styles_path": "src/theme/static/styles",
+    "build_dir": "dist"
+}

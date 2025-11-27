@@ -1,0 +1,14 @@
+{% macro loop_template(items) -%}
+    <h2>Macro Templates</h2>
+    <p>Macro templates can be used to dynamically loop through lists of data</p>
+    <p>
+        These are ideal for rendering several items in a single format, such as portfolio projects,
+        events, a list of links, or whatever you'd like!
+    </p>
+    <p>Here is an example: </p>
+    <ul>
+    {%- for item in items %}
+        <li>{{ item }}</li>
+    {%- endfor %}
+    </ul>
+{%- endmacro %}

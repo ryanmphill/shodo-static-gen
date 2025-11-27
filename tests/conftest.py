@@ -36,7 +36,7 @@ def temp_project_path(tmp_path):
     temp_path = tmp_path / "project_template"
     temp_path.mkdir()
     # Create a copy of the project_template directory
-    src_dir = "shodo_ssg/project_template"
+    src_dir = "tests/project_template"
     dest_dir = os.path.abspath(temp_path)
     # Copy files and folders
     shutil.copytree(src_dir, dest_dir, dirs_exist_ok=True)
