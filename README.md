@@ -113,7 +113,7 @@ Both Jinja templates and Markdown files support front matter - metadata enclosed
 - `lang`: Language code
 - `canonical`: Main site url
 - `charset`: ex. UTF-8
-- `theme-color`: Optionally render the theme-color meta tag
+- `theme_color`: Optionally render the theme-color meta tag
 - `google_font_link`: Optional link to google fonts
 - `body_class`: CSS class(es) to add to `<body>` tag
 - `body_id`: ID to add to `<body>` tag
@@ -133,7 +133,7 @@ Both Jinja templates and Markdown files support front matter - metadata enclosed
      - `og_locale`
 
 **Available front matter options specifically for markdown pages:**
-_These values will get pulled from markdown page frontmatter and be included in the `article` object when the layout template is rendered.
+_These values will get pulled from markdown page frontmatter and be included in the `article` object when the layout template is rendered._
 
 - `title`
 - `description`
@@ -399,7 +399,7 @@ Pages are automatically generated at:
 
 ### RSS/Atom Feeds
 
-Generate RSS or Atom feeds by creating an XML template with `file_type: xml` and `no_wrapper: true` in the front matter:
+Generate RSS or Atom feeds by creating an XML template with `file_type: xml` in the front matter:
 
 ```jinja
 @frontmatter
@@ -513,7 +513,7 @@ This is useful for setting publication dates in article front matter:
 @frontmatter
 {
     "title": "My Article",
-    "date": "2025-11-28T19:45:32Z"
+    "published_datetime": "2025-11-28T19:45:32Z"
 }
 @endfrontmatter
 ```
