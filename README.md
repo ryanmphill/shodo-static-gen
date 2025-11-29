@@ -431,6 +431,8 @@ Generate RSS or Atom feeds by creating an XML template with `file_type: xml` in 
 </rss>
 ```
 
+Note: Unlike the default behavior for HTML files, XML files will be rendered directly as the template name plus the `.xml` extension (instead of an index file being rendered in a directory named after the template).
+
 ### JSON data in the `/store` directory
 
 For easy configuration and keeping repeated values in one place, any property defined in a `.json` file within the `/store` directory will be passed to Jinja templates with an identical variable to the property name. Each nested object can be accessed using dot notation in the templates.
