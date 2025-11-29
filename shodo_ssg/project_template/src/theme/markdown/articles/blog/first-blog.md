@@ -1,9 +1,11 @@
 @frontmatter
 {
-    "title": "This is the first Blog Title!",
+    "title": "First Blog",
     "category": "general",
     "body_class": "blog-page first-blog",
-    "description": "This is the first blog description"
+    "description": "This is the first blog description",
+    "tags": ["four", "five","six"],
+    "published_datetime": "2025-01-25T05:00:00Z"
 }
 @endfrontmatter
 
@@ -16,7 +18,7 @@ The site builder will always match up the layout template that is closest in the
 
 #### layout.jinja
 
-The `layout.jinja` is just a normal jinja template, but the `{{ article }}` variable has been reserved as a `children` variable for passing in the content from each page. Simply define whatever repeated layout you would like to wrap the `{{ article }}` content, such as a header and footer.
+The `layout.jinja` is just a normal jinja template, but the `{{ article }}` variable has been reserved as a variable for passing in the content data from each page. Simply define whatever repeated layout you would like to wrap the `{{ article.content }}` content, such as a header and footer.
 
 Here is an example layout template:
 
@@ -26,7 +28,7 @@ Here is an example layout template:
         <h1 class="page-header__title">This is the root article layout</h1>
     </header>
     <main>
-        {{ article }}
+        {{ article.content }}
     </main>
     <footer>Thanks for reading</footer>
 </div>

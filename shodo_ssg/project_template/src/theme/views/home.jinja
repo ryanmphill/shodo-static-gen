@@ -3,52 +3,19 @@
     "title": "Shodo - A Static Site Generator - Home",
     "description": "Home page of the site",
     "keywords": ["home", "site", "example"],
-    "author": "Your Name",
-    "head_extra": [
-        "<!--<link rel='stylesheet' href='/static/css/custom.css'>-->",
-        "<!--<script src='/static/js/custom.js'></script>-->"
-    ]
+    "author": "Your Name"
 }
 @endfrontmatter
 
 <div class="container">
 <header class="site-header">
-    <img class="site-header__icon" height="150" width="150" src="/static/images/calligraphy-icon.svg" alt="Calligraphy pen writing on scroll">
     <h1 class="site-header__site-title">{{ config.metadata.title }}</h1>
 </header>
 <main>
-    <h1>{{ home_page_title }}</h1>
-    <article>
-        {{ short }}
-    </article>
-    <article>
-        {{ collections.another_short }}
-    </article>
     <section>
-        {% include 'another_template.jinja' %}
-    </section>
-    <section>
-        {% from 'loop_template.jinja' import loop_template as loop_template %}
-        {{ loop_template(list_of_words) }}
-    </section>
-    <section>
-        <h2>JavaScript</h2>
-
-        <div id="helloJavaScript">
-            {# HTML rendered by JavaScript #}
-        </div>
-    </section>
-    <section>
-        <h2>Getting Started</h2>
-        <p>
-            Get started by editing <code>src/theme/views/home.jinja</code> and then running <code>Python serve.py</code>
-            to build your static site in the <code>dist/</code> directory and start up the development server!
-        </p>
+        {# Content below imported from src/theme/markdown/partials/homepage/content.md #}
+        {{ homepage.content }}
     </section>
 </main>
-<footer>
-    <div><a href="/linked_page">Linked Template Page</a></div>
-    <div><a href="/blog">Blog</a></div>
-    <div><a href="/newsletter/monthly-update">Newsletter</a></div>
-</footer>
+{% include 'partials/footer.jinja' %}
 </div>
