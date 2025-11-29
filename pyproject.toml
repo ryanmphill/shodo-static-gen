@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "shodo_ssg"
 version = "0.0.dev3"
 description = "A Python-based static site generator for building sites from Markdown and JSON files"
-authors = [{name = "Ryan Phillips"}]
+authors = [{name = "Ryan Phillips", email = "ryanphillipssoftware@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
 keywords = ["shodo", "static site generator", "ssg", "shodo static gen"]
@@ -29,7 +29,10 @@ dependencies = [
 dev = ["black", "pytest"]
 
 [project.urls]
-homepage = "https://github.com/ryanmphill/shodo-static-gen"
+homepage = "https://shodo.dev"
+source = "https://github.com/ryanmphill/shodo-static-gen"
+issues = "https://github.com/ryanmphill/shodo-static-gen/issues"
+documentation = "https://shodo.dev/docs"
 
 [project.scripts]
 start-shodo-project = "shodo_ssg:start_shodo_project"
