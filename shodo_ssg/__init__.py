@@ -37,3 +37,4 @@ from .assembler import (
 )
 from .start_shodo_project import start_shodo_project
 from .server import start_server
+from .cli import cli
