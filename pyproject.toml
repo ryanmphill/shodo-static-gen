@@ -9,7 +9,7 @@ description = "A Python-based static site generator for building sites from Mark
 authors = [{name = "Ryan Phillips", email = "ryanphillipssoftware@gmail.com"}]
 license = {text = "MIT"}
 readme = "README.md"
-keywords = ["shodo", "static site generator", "ssg", "shodo static gen"]
+keywords = ["shodo", "static site generator", "ssg", "blog", "rss"]
 requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -21,6 +21,17 @@ classifiers = [
     "Programming Language :: Python :: 3.14",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Internet",
+    "Topic :: Software Development",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Text Processing :: Markup :: HTML",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Internet :: WWW/HTTP :: Site Management",
 ]
 dependencies = [
     "Jinja2>=3.1.3",
