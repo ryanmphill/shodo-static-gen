@@ -504,7 +504,7 @@ Shodo provides helpful CLI commands:
 Generate an ISO 8601 formatted UTC timestamp for use in front matter or RSS feeds:
 
 ```bash
-shodo timestamp
+shodo now
 ```
 
 Output: `2025-11-28T19:45:32Z`
