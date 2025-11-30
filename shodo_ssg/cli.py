@@ -33,9 +33,9 @@ def cli():
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
-    # Add datetime subcommand
+    # Add 'now' datetime subcommand
     subparsers.add_parser(
-        "datetime",
+        "now",
         help="Generate current UTC datetime in ISO 8601 format",
     )
 
@@ -44,7 +44,7 @@ def cli():
 
     args = parser.parse_args()
 
-    if args.command == "datetime":
+    if args.command == "now":
         timestamp_command()
     else:
         parser.print_help()
