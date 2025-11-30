@@ -63,6 +63,120 @@ def test_json_loader_load_args(
     assert isinstance(args, dict)
 
 
+def test_json_loader_load_args_handles_head_extra_metadata(
+    settings_dict,
+):  # pylint: disable=redefined-outer-name
+    """Test that JSONLoader correctly loads head_extra metadata."""
+    loader = JSONLoader(settings_dict)
+    args = loader.load_args()
+    config = args.get("config", {})
+    metadata = config.get("metadata", {})
+    assert isinstance(metadata, dict)
+    assert "head_extra" in metadata
+    head_extra = metadata["head_extra"]
+    assert isinstance(head_extra, list)
+    assert len(head_extra) == 8  # There are 8 elements in the head_extra list
+
+    assert " ".join(
+        head_extra[0].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<script type="application/ld+json">{\n'
+        '                "@context": "https://schema.org",\n'
+        '                "@type": "Article",\n'
+        '                "headline": "LD+JSON Article",\n'
+        '                "description": "This article has ld+json in head extra."\n'
+        "            }</script>".strip().replace("\n", "").replace("\t", "").split()
+    )
+    assert " ".join(
+        head_extra[1].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<script type="application/ld+json">{\n'
+        '                "@context": "https://schema.org",\n'
+        '                "@type": "Article",\n'
+        '                "headline": "LD+JSON Article",\n'
+        '                "description": "This article has ld+json in head extra."\n'
+        "            }</script>".strip().replace("\n", "").replace("\t", "").split()
+    )
+    assert " ".join(
+        head_extra[2].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<script type="application/ld+json">{\n'
+        '                "@context": "https://schema.org",\n'
+        '                "@type": "Article",\n'
+        '                "headline": "LD+JSON Article",\n'
+        '                "description": "This article has ld+json in head extra."\n'
+        "            }</script>".strip().replace("\n", "").replace("\t", "").split()
+    )
+
+    # Also assert the remaining elements are rendered correctly in double quotes
+    assert " ".join(
+        head_extra[3].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        (
+            '<link rel="icon" href="/static/images/favicons/site-favicon-light.ico"'
+            + ' type="image/x-icon" media="(prefers-color-scheme: light)">'
+        )
+        .strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+    assert " ".join(
+        head_extra[4].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        (
+            '<link rel="icon" href="/static/images/favicons/site-favicon-dark.ico"'
+            + ' type="image/x-icon" media="(prefers-color-scheme: dark)">'
+        )
+        .strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+    assert " ".join(
+        head_extra[5].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<link rel="apple-touch-icon" href="/static/images/favicons/site-favicon-dark.png">'.strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+    assert " ".join(
+        head_extra[6].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<script type="text/javascript" src="/static/scripts/theme-loader.js"></script>'.strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+    assert " ".join(
+        head_extra[7].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
+        '<link rel="stylesheet" href="/static/styles/extra-styles.css">'.strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+
+
+def test_json_loader_load_args_handles_quotes_in_values(
+    settings_dict,
+):  # pylint: disable=redefined-outer-name
+    """Test that JSONLoader correctly loads JSON with quotes in values."""
+    loader = JSONLoader(settings_dict)
+    args = loader.load_args()
+    quotes = args.get("quotes", {})
+    assert isinstance(quotes, dict)
+    assert "quote" in quotes
+    assert quotes["quote"] == "She said, 'This is a great article!' and smiled."
+    assert "another_quote" in quotes
+    assert quotes["another_quote"] == 'He replied, "Indeed, it is!"'
+    assert "third_quote" in quotes
+    assert quotes["third_quote"] == 'She said, "Let\'s test quotes!"'
+    assert "fourth_quote" in quotes
+    assert quotes["fourth_quote"] == 'He responded, "Let\'s do it!"'
+
+
 def test_settings_loader_data(
     temp_project_path,
     settings_dict,

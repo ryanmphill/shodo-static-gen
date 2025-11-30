@@ -12,5 +12,11 @@
         "using",
         "Jinja",
         "Macros!"
-    ]
+    ],
+    "quotes": {
+        "quote": "She said, 'This is a great article!' and smiled.",
+        "another_quote": "He replied, \"Indeed, it is!\"",
+        "third_quote": "She said, \"Let's test quotes!\"",
+        "fourth_quote": "He responded, \"Let's do it!\""
+    }
 }
