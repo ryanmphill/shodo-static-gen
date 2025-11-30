@@ -29,14 +29,9 @@ class FrontMatterProcessor:
             if isinstance(front_matters, list) and len(front_matters) >= 1:
                 combined_front_matter = {}
                 for fm in front_matters:
-                    fm = fm.replace("@frontmatter", "").replace("@endfrontmatter", "")
-                    fm = fm.strip()
-                    # If parsable json, return as dict
-                    if fm.startswith("{") and fm.endswith("}"):
-                        fm = self.json_loader.json_to_dict(fm)
-                        if isinstance(fm, dict):
-                            combined_front_matter.update(fm)
-
+                    parsed_fm = self._parse_front_matter(fm)
+                    if parsed_fm and isinstance(parsed_fm, dict):
+                        combined_front_matter.update(parsed_fm)
                 # If the front matter is a dictionary, return it
                 if isinstance(combined_front_matter, dict):
                     return combined_front_matter
@@ -83,3 +78,27 @@ class FrontMatterProcessor:
                 file.write(content)
 
         return content
+
+    def _parse_front_matter(self, fm: str):
+        """
+        Parses front matter string into a dictionary.
+        """
+        fm = fm.replace("@frontmatter", "").replace("@endfrontmatter", "")
+        fm = fm.strip()
+        # If parsable json, return as dict
+        if fm.startswith("{") and fm.endswith("}"):
+            fm = self.json_loader.format_string_for_json_compatibility(fm)
+            fm = self.json_loader.json_to_dict(fm)
+            if isinstance(fm, dict):
+                head_extra = fm.get("head_extra", None)
+                if head_extra and isinstance(head_extra, list):
+                    formatted_head_extra = []
+                    for item in head_extra:
+                        # Allow single quotes to be used in tags
+                        # instead of escaped double quotes, as well
+                        # as ensuring proper formatting for ld+json scripts
+                        formatted_item = item.replace("'", '"')
+                        formatted_head_extra.append(formatted_item)
+                    fm["head_extra"] = formatted_head_extra
+                return fm
+        return None

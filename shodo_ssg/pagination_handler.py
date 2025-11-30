@@ -328,8 +328,11 @@ class PaginationHandler:
                 if re.match(r"^\s*\{\s*\}\s*$", filters_str):
                     return {}
 
-                formatted_json = self._format_filter_string_to_json(filters_str)
-
+                formatted_json = (
+                    self.context.json_loader.format_string_for_json_compatibility(
+                        filters_str
+                    )
+                )
                 filters_dict = self.context.json_loader.json_to_dict(formatted_json)
 
                 if not isinstance(filters_dict, dict):
@@ -342,80 +345,3 @@ class PaginationHandler:
             raise ValueError(
                 f"Could not find '{function_name}' function call in template for pagination."
             )
-
-    def _format_filter_string_to_json(self, filter_str: str) -> str:
-        """
-        Format a raw filter string of query arguments to valid JSON
-        so that it can be parsed into a dictionary. This requires adding
-        quotes around unquoted dynamic template variables such as 'limit' and
-        'offset' so the JSON parser can handle it. We only need enough information
-        to parse the JSON and generate the correct number of pages (which is retrieved
-        from 'per_page' in the frontmatter), so we don't need to resolve the actual values
-        of the dynamic variables here. They will be handled later when the query is
-        executed as the generated templates are being rendered.
-        """
-        result = filter_str[:]
-
-        # Step 1: Find and protect all quoted strings (both single and double quoted)
-        # by replacing them with placeholders, then we'll restore them later
-        string_placeholders = []
-
-        def store_string(match):
-            """Store the string and return a placeholder"""
-            quote_char = match.group(1)  # ' or "
-            content = match.group(2)
-
-            # If it's a single-quoted string, convert to double-quoted and escape internal quotes
-            if quote_char == "'":
-                escaped_content = content.replace("\\", "\\\\").replace('"', '\\"')
-                # Restore escaped single quotes (or apostrophes as "'")
-                escaped_content = escaped_content.replace("<<<ESCAPED_SQUOTE>>>", "'")
-                final_string = f'"{escaped_content}"'
-            else:
-                # It's already double-quoted, just escape any unescaped internal double quotes
-                # First, protect already escaped quotes
-                temp = content.replace('\\"', "<<<ESCAPED_DQUOTE>>>")
-                # Now escape unescaped quotes
-                temp = temp.replace('"', '\\"')
-                # Restore the already escaped ones
-                temp = temp.replace("<<<ESCAPED_DQUOTE>>>", '\\"')
-                final_string = f'"{temp}"'
-
-            placeholder = f"<<<STRING_{len(string_placeholders)}>>>"
-            string_placeholders.append(final_string)
-            return placeholder
-
-        # Find and replace all escaped single quotes with <<<ESCAPED_SQUOTE>>>
-        result = result.replace("\\'", "<<<ESCAPED_SQUOTE>>>")
-
-        # Match both single and double quoted strings
-        result = re.sub(r"""(['"])([^\1]*?)\1""", store_string, result)
-
-        # Step 2: Now work with the structure without worrying about string contents
-        result = re.sub(r",\s*([\]}])", r"\1", result)  # Remove trailing commas
-        result = result.replace("\n", "")  # Remove newlines
-
-        # Step 3: Quote unquoted values
-        result = re.sub(
-            r':\s*([^"\[\]{},\s<][^,\}\]<]*?)(\s*[,\}\]])',
-            lambda m: f': "{m.group(1).strip()}"{m.group(2)}',
-            result,
-        )
-
-        # Step 4: Unquote numeric and boolean values
-        result = re.sub(r'"\s*(-?\d+(?:\.\d+)?)\s*"', r"\1", result)
-        # Change standalone true/false to True/False
-        result = re.sub(
-            r'"\s*(true|false)\s*"',
-            lambda m: m.group(1).capitalize(),
-            result,
-            flags=re.IGNORECASE,
-        )
-        result = re.sub(r'"\s*(True|False)\s*"', r"\1", result, flags=re.IGNORECASE)
-        result = re.sub(r'"\s*(\[|\]|\{|\})\s*"', r"\1", result)
-
-        # Step 5: Restore the string placeholders
-        for i, string_value in enumerate(string_placeholders):
-            result = result.replace(f"<<<STRING_{i}>>>", string_value)
-
-        return result

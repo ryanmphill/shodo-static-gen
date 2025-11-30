@@ -2,12 +2,12 @@
 Tests for the PaginationHandler class
 """
 
-from ast import literal_eval
 import os
 from typing import cast
 from unittest.mock import Mock, mock_open, patch
 import pytest
 from jinja2 import Template
+from shodo_ssg.data_loader import JSONLoader
 from shodo_ssg.front_matter_processor import FrontMatterProcessor
 from shodo_ssg.pagination_handler import PaginationHandler
 from shodo_ssg.api import API
@@ -20,7 +20,7 @@ class TestPaginationHandler:
     """Test suite for PaginationHandler class"""
 
     @pytest.fixture
-    def mock_context(self):
+    def mock_context(self, settings_dict):
         """Fixture to provide a mock TemplateContext"""
         context = cast(TemplateContext, Mock(spec=TemplateContext))
         # pylint: disable=protected-access
@@ -46,10 +46,19 @@ class TestPaginationHandler:
 
         # Mock json_loader
         mock_json_loader = Mock()
+        json_loader = JSONLoader(settings_dict)
 
-        def mock_json_to_dict(x):
-            eval_dict = literal_eval(x)
-            return eval_dict
+        def mock_format_string_for_json_compatibility(x):
+            result = json_loader.format_string_for_json_compatibility(x)
+            return result
+
+        def mock_json_to_dict(content: str):
+            result = json_loader.json_to_dict(content)
+            return result
+
+        mock_json_loader.format_string_for_json_compatibility = Mock(
+            side_effect=mock_format_string_for_json_compatibility
+        )
 
         mock_json_loader.json_to_dict = Mock(side_effect=mock_json_to_dict)
         context.json_loader = mock_json_loader
