@@ -86,6 +86,8 @@ class MarkdownLoader(DataLoader):
         md_files = []
         md_dirs = self._get_nested_markdown_dirs(os.path.join(self.src_path, sub_dir))
         for md_dir_path in md_dirs:
+            if not os.path.exists(md_dir_path):
+                continue
             for file in os.listdir(md_dir_path):
                 if file.endswith(".md"):
                     md_files.append((md_dir_path, file))
@@ -176,6 +178,8 @@ class MarkdownLoader(DataLoader):
             markdown_dirs = []
 
         markdown_dirs.append(markdown_path)
+        if not os.path.exists(markdown_path):
+            return markdown_dirs
         for path in os.listdir(markdown_path):
             path_from_root = os.path.join(self.root_path, markdown_path + path)
             # For each directory, recursively append all a nested directories
@@ -265,6 +269,8 @@ class JSONLoader(DataLoader):
         if json_dirs is None:
             json_dirs = []
 
+        if not os.path.exists(json_path):
+            return json_dirs
         json_dirs.append(json_path)
         for path in os.listdir(json_path):
             path_from_root = os.path.join(self.root_path, json_path + path)
