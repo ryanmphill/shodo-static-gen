@@ -21,7 +21,7 @@ from shodo_ssg.template_handler import TemplateHandler
 from shodo_ssg.asset_writer import (
     FaviconWriter,
     ScriptWriter,
-    ImageWriter,
+    AssetWriter,
     CSSWriter,
     AssetHandler,
 )
@@ -91,7 +91,7 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
             "json_config_path": os.path.join(temp_project_path, "src/store"),
             "favicon_path": os.path.join(temp_project_path, "src/favicon.ico"),
             "scripts_path": os.path.join(temp_project_path, "src/theme/static/scripts"),
-            "images_path": os.path.join(temp_project_path, "src/theme/static/images"),
+            "assets_path": os.path.join(temp_project_path, "src/theme/static/assets"),
             "styles_path": os.path.join(temp_project_path, "src/theme/static/styles"),
         }
     )
@@ -154,10 +154,10 @@ def static_site_generator_deps(
     )
     favicon_writer = FaviconWriter(settings)
     script_writer = ScriptWriter(settings)
-    image_writer = ImageWriter(settings)
+    asset_writer = AssetWriter(settings)
     css_writer = CSSWriter(settings)
     asset_handler = AssetHandler(
-        favicon_writer, script_writer, image_writer, css_writer
+        favicon_writer, script_writer, asset_writer, css_writer
     )
     return template_handler, asset_handler
 
@@ -170,7 +170,7 @@ def create_test_build_settings_from_temp_path(temp_path):
         "json_config_path": f"{os.path.join(temp_path, 'src/store')}",
         "favicon_path": f"{os.path.join(temp_path, 'src/favicon.ico')}",
         "scripts_path": f"{os.path.join(temp_path, 'src/theme/static/scripts')}",
-        "images_path": f"{os.path.join(temp_path, 'src/theme/static/images')}",
+        "assets_path": f"{os.path.join(temp_path, 'src/theme/static/assets')}",
         "styles_path": f"{os.path.join(temp_path, 'src/theme/static/styles')}",
         "build_dir": f"{os.path.join(temp_path, 'dist')}",
     }

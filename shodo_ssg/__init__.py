@@ -24,7 +24,7 @@ from .data_loader import DataLoader, MarkdownLoader, JSONLoader, SettingsLoader
 from .asset_writer import (
     FaviconWriter,
     ScriptWriter,
-    ImageWriter,
+    AssetWriter,
     CSSWriter,
     AssetHandler,
 )

@@ -68,7 +68,9 @@ def css_exist_in_build_dir(build_dir_path, styles_path_segment="static/styles"):
     return True
 
 
-def images_exist_in_build_dir(build_dir_path, images_path_segment="static/images"):
+def images_exist_in_build_dir(
+    build_dir_path, images_path_segment="static/assets/images"
+):
     """Returns True if all images exist in the build directory"""
     images_build_path = os.path.join(build_dir_path, images_path_segment)
     if not os.path.exists(images_build_path):

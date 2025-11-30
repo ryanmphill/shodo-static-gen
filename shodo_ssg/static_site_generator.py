@@ -79,6 +79,6 @@ class StaticSiteGenerator:
         self.template_handler.write()
         self.asset_handler.favicon.write()
         self.asset_handler.scripts.write()
-        self.asset_handler.images.write()
+        self.asset_handler.assets.write()
         self.asset_handler.styles.write()
         logging.info("\033[92mSite build successfully completed!\033[0m")

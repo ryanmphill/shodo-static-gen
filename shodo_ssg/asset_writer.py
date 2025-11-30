@@ -11,7 +11,7 @@ import shutil
 from shodo_ssg.data_loader import SettingsDict
 
 
-class AssetWriter:
+class BaseAssetWriter:
     """
     Base class for writing and compiling static assets that are to be included in the final build
     """
@@ -42,7 +42,7 @@ class AssetWriter:
             shutil.copytree(self.src_path, self.destination_path)
 
 
-class FaviconWriter(AssetWriter):
+class FaviconWriter(BaseAssetWriter):
     """
     Handles writing the favicon file to the destination directory
     """
@@ -56,7 +56,7 @@ class FaviconWriter(AssetWriter):
         )
 
 
-class ScriptWriter(AssetWriter):
+class ScriptWriter(BaseAssetWriter):
     """
     Handles writing all script files to the destination directory
     """
@@ -70,21 +70,22 @@ class ScriptWriter(AssetWriter):
         )
 
 
-class ImageWriter(AssetWriter):
+class AssetWriter(BaseAssetWriter):
     """
     Handles writing all image files to the destination directory
     """
 
     def __init__(self, settings: SettingsDict):
         """
-        Initializes the ImageWriter with the source and destination paths for the images
+        Initializes the AssetWriter with the source and destination paths for the images,
+        fonts, and any other static assets
         """
         super().__init__(
-            settings["images_path"], f"{settings['build_dir']}/static/images"
+            settings["assets_path"], f"{settings['build_dir']}/static/assets"
         )
 
 
-class CSSWriter(AssetWriter):
+class CSSWriter(BaseAssetWriter):
     """
     Handles writing all CSS files to the destination directory as a single CSS file
     """
@@ -134,10 +135,10 @@ class CSSWriter(AssetWriter):
 class AssetHandler:
     """
     Data class that holds logic for writing static site files to the build directory,
-    including favicon, scripts, styles, and images
+    including favicon, scripts, styles, and miscellaneous assets
     """
 
     favicon: FaviconWriter
     scripts: ScriptWriter
-    images: ImageWriter
+    assets: AssetWriter
     styles: CSSWriter

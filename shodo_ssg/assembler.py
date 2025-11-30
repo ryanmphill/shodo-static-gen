@@ -8,7 +8,7 @@ from shodo_ssg.asset_writer import (
     AssetHandler,
     CSSWriter,
     FaviconWriter,
-    ImageWriter,
+    AssetWriter,
     ScriptWriter,
 )
 from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsLoader
@@ -56,11 +56,11 @@ def initialize_components(settings: dict):
     )
     favicon_writer = FaviconWriter(settings)
     script_writer = ScriptWriter(settings)
-    image_writer = ImageWriter(settings)
+    asset_writer = AssetWriter(settings)
     css_writer = CSSWriter(settings)
 
     asset_handler = AssetHandler(
-        favicon_writer, script_writer, image_writer, css_writer
+        favicon_writer, script_writer, asset_writer, css_writer
     )
 
     return (template_handler, asset_handler)

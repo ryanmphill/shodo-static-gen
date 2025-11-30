@@ -194,7 +194,7 @@ def test_settings_loader_data(
     assert data["json_config_path"] == settings_dict["json_config_path"]
     assert data["favicon_path"] == settings_dict["favicon_path"]
     assert data["scripts_path"] == settings_dict["scripts_path"]
-    assert data["images_path"] == settings_dict["images_path"]
+    assert data["assets_path"] == settings_dict["assets_path"]
     assert data["styles_path"] == settings_dict["styles_path"]
     assert set(data["template_paths"]) == set(settings_dict["template_paths"])
 
@@ -216,7 +216,7 @@ def test_settings_loader_load_args(
     assert args["json_config_path"] == test_settings["json_config_path"]
     assert args["favicon_path"] == test_settings["favicon_path"]
     assert args["scripts_path"] == test_settings["scripts_path"]
-    assert args["images_path"] == test_settings["images_path"]
+    assert args["assets_path"] == test_settings["assets_path"]
     assert args["styles_path"] == test_settings["styles_path"]
 
 

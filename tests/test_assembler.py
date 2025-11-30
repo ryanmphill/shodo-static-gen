@@ -33,7 +33,7 @@ def test_load_settings(temp_project_path, settings_dict):
     assert data["json_config_path"] == settings_dict["json_config_path"]
     assert data["favicon_path"] == settings_dict["favicon_path"]
     assert data["scripts_path"] == settings_dict["scripts_path"]
-    assert data["images_path"] == settings_dict["images_path"]
+    assert data["assets_path"] == settings_dict["assets_path"]
     assert data["styles_path"] == settings_dict["styles_path"]
     assert set(data["template_paths"]) == set(settings_dict["template_paths"])
 
@@ -57,7 +57,7 @@ def test_initialize_components(settings_dict, static_site_generator_deps):
     assert components[0].context.json_loader
     assert components[1].favicon
     assert components[1].scripts
-    assert components[1].images
+    assert components[1].assets
     assert components[1].styles
 
 
