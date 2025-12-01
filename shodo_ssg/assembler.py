@@ -10,6 +10,7 @@ from shodo_ssg.asset_writer import (
     FaviconWriter,
     AssetWriter,
     ScriptWriter,
+    RootFilesWriter,
 )
 from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsLoader
 from shodo_ssg.front_matter_processor import FrontMatterProcessor
@@ -58,9 +59,10 @@ def initialize_components(settings: dict):
     script_writer = ScriptWriter(settings)
     asset_writer = AssetWriter(settings)
     css_writer = CSSWriter(settings)
+    root_files_writer = RootFilesWriter(settings)
 
     asset_handler = AssetHandler(
-        favicon_writer, script_writer, asset_writer, css_writer
+        favicon_writer, script_writer, asset_writer, css_writer, root_files_writer
     )
 
     return (template_handler, asset_handler)

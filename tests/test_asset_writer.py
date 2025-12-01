@@ -6,6 +6,7 @@ from shodo_ssg.asset_writer import (
     BaseAssetWriter,
     FaviconWriter,
     AssetWriter,
+    RootFilesWriter,
     ScriptWriter,
     CSSWriter,
 )
@@ -109,3 +110,26 @@ def test_asset_writer_write(settings_dict):
 
     assert os.path.exists(dest_path)
     assert os.path.isdir(dest_path)
+
+
+def test_root_files_writer_write(settings_dict):
+    """Test the write method of the RootFilesWriter class"""
+    root_files_writer = RootFilesWriter(settings_dict)
+    dest_path = settings_dict["build_dir"]
+    if not os.path.exists(settings_dict["build_dir"]):
+        # Make the dist directory if it doesn't exist
+        os.makedirs(settings_dict["build_dir"])
+    # Create a test file in the source root files path
+    test_file_src = os.path.join(settings_dict["root_files_path"], "test_root_file.txt")
+    os.makedirs(settings_dict["root_files_path"], exist_ok=True)
+    with open(test_file_src, "w", encoding="utf-8") as f:
+        f.write("This is a test root file.")
+    test_file_dest = os.path.join(dest_path, "test_root_file.txt")
+    if os.path.exists(test_file_dest):
+        os.remove(test_file_dest)
+        assert not os.path.exists(test_file_dest)
+
+    root_files_writer.write()
+
+    assert os.path.exists(test_file_dest)
+    assert os.path.isfile(test_file_dest)

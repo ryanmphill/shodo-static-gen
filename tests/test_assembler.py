@@ -209,3 +209,29 @@ def test_abs_urls_in_rss_final_build(
     assert '<a href="https://shodo.dev/' in rss_content
     assert '<a href="/' not in rss_content
     assert 'src="/' not in rss_content
+
+
+def test_root_files_writer_write_merges_data_when_directory_exists_in_final_build(
+    temp_project_path, template_handler_dependencies
+):
+    """Test the write method of the RootFilesWriter class when directory exists in destination."""
+    tmp_proj_root = os.path.abspath(temp_project_path)
+    settings, _root_layout_builder, _pagination_handler, _api = (
+        template_handler_dependencies
+    )
+
+    build_path = os.path.abspath(settings["build_dir"])
+
+    if os.path.exists(build_path):
+        shutil.rmtree(build_path)
+    assert not os.path.exists(build_path)
+
+    build_static_site(tmp_proj_root)
+
+    # There should be two files in the fonts directory after merging
+    fonts_dir = os.path.join(build_path, "static", "assets", "fonts")
+    assert os.path.exists(fonts_dir)
+    assert os.path.isdir(fonts_dir)
+    merged_files = os.listdir(fonts_dir)
+    assert "pretend-font.txt" in merged_files
+    assert "another-font.txt" in merged_files

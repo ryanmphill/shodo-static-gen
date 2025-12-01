@@ -27,6 +27,7 @@ from .asset_writer import (
     AssetWriter,
     CSSWriter,
     AssetHandler,
+    RootFilesWriter,
 )
 from .static_site_generator import StaticSiteGenerator
 from .assembler import (

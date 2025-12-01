@@ -81,4 +81,5 @@ class StaticSiteGenerator:
         self.asset_handler.scripts.write()
         self.asset_handler.assets.write()
         self.asset_handler.styles.write()
+        self.asset_handler.root_files.write()
         logging.info("\033[92mSite build successfully completed!\033[0m")

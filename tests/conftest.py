@@ -20,6 +20,7 @@ from shodo_ssg.template_handler import TemplateHandler
 
 from shodo_ssg.asset_writer import (
     FaviconWriter,
+    RootFilesWriter,
     ScriptWriter,
     AssetWriter,
     CSSWriter,
@@ -93,6 +94,7 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
             "scripts_path": os.path.join(temp_project_path, "src/theme/static/scripts"),
             "assets_path": os.path.join(temp_project_path, "src/theme/static/assets"),
             "styles_path": os.path.join(temp_project_path, "src/theme/static/styles"),
+            "root_files_path": os.path.join(temp_project_path, "src/root"),
         }
     )
 
@@ -156,8 +158,9 @@ def static_site_generator_deps(
     script_writer = ScriptWriter(settings)
     asset_writer = AssetWriter(settings)
     css_writer = CSSWriter(settings)
+    root_files_writer = RootFilesWriter(settings)
     asset_handler = AssetHandler(
-        favicon_writer, script_writer, asset_writer, css_writer
+        favicon_writer, script_writer, asset_writer, css_writer, root_files_writer
     )
     return template_handler, asset_handler
 
@@ -172,5 +175,6 @@ def create_test_build_settings_from_temp_path(temp_path):
         "scripts_path": f"{os.path.join(temp_path, 'src/theme/static/scripts')}",
         "assets_path": f"{os.path.join(temp_path, 'src/theme/static/assets')}",
         "styles_path": f"{os.path.join(temp_path, 'src/theme/static/styles')}",
+        "root_files_path": f"{os.path.join(temp_path, 'src/root')}",
         "build_dir": f"{os.path.join(temp_path, 'dist')}",
     }
