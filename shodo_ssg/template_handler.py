@@ -5,14 +5,17 @@ rendering the Jinja2 templates as html
 
 import logging
 import os
-import re
 from typing import Optional
 from jinja2 import (
     Environment,
     FileSystemLoader,
+    Template,
 )
 
-from shodo_ssg.data_loader import JSONLoader, MarkdownLoader, SettingsDict
+from shodo_ssg.api import API
+from shodo_ssg.data_loader import SettingsDict
+from shodo_ssg.html_root_layout_builder import HTMLRootLayoutBuilder
+from shodo_ssg.pagination_handler import PaginationHandler
 
 
 class TemplateHandler:
@@ -23,61 +26,24 @@ class TemplateHandler:
     def __init__(
         self,
         settings: SettingsDict,
-        markdown_loader: MarkdownLoader,
-        json_loader: JSONLoader,
+        html_root_layout_builder: HTMLRootLayoutBuilder,
+        pagination_handler: PaginationHandler,
+        api: API,
     ):
         """
         Initialize the TemplateHandler with the paths to the template directories.
         """
         self.template_env = Environment(
-            loader=FileSystemLoader(searchpath=settings["template_paths"])
+            loader=FileSystemLoader(searchpath=settings["template_paths"]),
+            trim_blocks=True,
+            lstrip_blocks=True,
         )
         self.build_dir = settings["build_dir"]
         self.root_path = settings["root_path"]
-        self.markdown_loader = markdown_loader
-        self.json_loader = json_loader
-        self._render_args = None
-        self._md_pages = None
-
-    @property
-    def render_args(self):
-        """
-        Getter for the render arguments
-        """
-        if self._render_args is None:
-            # Set the render arguments upon class instantiation
-            self._render_args = self.markdown_loader.load_args()
-            self._render_args.update(self.json_loader.load_args())
-
-        return self._render_args.copy()
-
-    @property
-    def md_pages(self):
-        """
-        Getter for the markdown pages
-        """
-        if self._md_pages is None:
-            # Set the markdown pages upon class instantiation
-            self._md_pages = self.markdown_loader.load_pages()
-
-            for md_page in self._md_pages:
-                front_matter = self.get_front_matter(os.path.abspath(md_page["path"]))
-                if not front_matter:
-                    front_matter = {}
-                # Add the front matter to the md_page
-                md_page["front_matter"] = front_matter
-
-        return self._md_pages.copy()
-
-    def update_render_arg(self, key, value):
-        """
-        Update a render argument with the provided key-value pair. Used for
-        setting and updating render arguments that are reused for dynamic content,
-        such as article pages.
-        """
-        if self._render_args is None:
-            self._render_args = self.render_args
-        self._render_args[key] = value
+        self.root_layout_builder = html_root_layout_builder
+        self.pagination_handler = pagination_handler
+        self.api = api
+        self.context = api.context
 
     def get_template(self, template_name):
         """
@@ -93,293 +59,76 @@ class TemplateHandler:
             "\033[94mWriting html from %s to %s...\033[0m", page_name, destination
         )
 
-    def _get_doc_head(
-        self,
-        styles_link="/static/styles/main.css",
-        favicon_link='<link rel="icon" type="image/x-icon" href="/favicon.ico">',
-        front_matter: Optional[dict] = None,
+    def _process_template(
+        self, template_name, destination_dir: str, front_matter: Optional[dict] = None
     ):
         """
-        Generate the HTML head section for a document, including opening body tag.
+        Prepares and writes a template to the specified destination
         """
-        global_metadata: dict = self.render_args.get("metadata", {})
-        if front_matter is None:
-            front_matter = {}
-
-        # Merge global metadata with front matter, with front_matter taking precedence
-        head_content = self._merge_head_data(front_matter, global_metadata)
-
-        # Extract the "lang", "body_id", and "body_class" properties and
-        # remove them from the dictionary
-        lang = head_content.pop("lang", "en")
-        body_id = head_content.pop("body_id", None)
-        body_class = head_content.pop("body_class", None)
-
-        # Format the properties of the head content as HTML tags
-        head_content_tags = self._format_head_data_as_html(head_content)
-
-        # Remove empty tags "" from the dictionary
-        head_content_tags = {k: v for k, v in head_content_tags.items() if v != ""}
-        # Join the tags into a single string
-        head_content_html = "\n".join(head_content_tags.values())
-
-        head_html = f"""
-        <!DOCTYPE html>
-        <html lang="{lang}">
-        <head>
-            {head_content_html}
-            {favicon_link}
-            <link href="{styles_link}" rel="stylesheet" />
-        </head>
-        <body
-        """
-        if body_id:
-            head_html += f' id="{body_id}"'
-        if body_class:
-            head_html += f' class="{body_class}"'
-        head_html += ">"
-        head_html = head_html.strip() + "\n"
-
-        return head_html
-
-    def _format_head_data_as_html(self, head_content: dict) -> dict:
-        """
-        Format the properties of the head content as HTML tags.
-        """
-        # Format the properties of the head content as HTML tags
-        formatted_head_content = {
-            "charset": f'<meta charset="{head_content["charset"]}">',
-            "viewport": '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
-            "title": f'<title>{head_content["title"]}</title>',
-            "description": (
-                f'<meta name="description" content="{head_content["description"]}">'
-                if head_content["description"]
-                else ""
-            ),
-            "keywords": (
-                f'<meta name="keywords" content="{",".join(head_content["keywords"])}">'
-                if isinstance(head_content["keywords"], list)
-                else (
-                    f'<meta name="keywords" content="{head_content["keywords"]}">'
-                    if head_content["keywords"]
-                    else ""
-                )
-            ),
-            "author": (
-                f'<meta name="author" content="{head_content["author"]}">'
-                if head_content["author"]
-                else ""
-            ),
-            "theme_color": (
-                f'<meta name="theme-color" content="{head_content["theme_color"]}">'
-                if head_content["theme_color"]
-                else ""
-            ),
-            "og_image": (
-                f'<meta property="og:image" content="{head_content["og_image"]}">'
-                if head_content["og_image"]
-                else ""
-            ),
-            "og_image_alt": (
-                f'<meta property="og:image:alt" content="{head_content["og_image_alt"]}">'
-                if head_content["og_image_alt"]
-                else ""
-            ),
-            "og_title": (
-                f'<meta property="og:title" content="{head_content["og_title"]}">'
-                if head_content["og_title"]
-                else ""
-            ),
-            "og_description": (
-                f'<meta property="og:description" content="{head_content["og_description"]}">'
-                if head_content["og_description"]
-                else ""
-            ),
-            "og_url": (
-                f'<meta property="og:url" content="{head_content["og_url"]}">'
-                if head_content["og_url"]
-                else ""
-            ),
-            "og_type": (
-                f'<meta property="og:type" content="{head_content["og_type"]}">'
-                if head_content["og_type"]
-                else ""
-            ),
-            "og_site_name": (
-                f'<meta property="og:site_name" content="{head_content["og_site_name"]}">'
-                if head_content["og_site_name"]
-                else ""
-            ),
-            "og_locale": (
-                f'<meta property="og:locale" content="{head_content["og_locale"]}">'
-                if head_content["og_locale"]
-                else ""
-            ),
-            "canonical": (
-                f'<link rel="canonical" href="{head_content["canonical"]}">'
-                if head_content["canonical"]
-                else ""
-            ),
-            "google_font_link": (
-                f"""
-                <link rel="preconnect" href="https://fonts.googleapis.com">
-                <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-                <link href="{head_content["google_font_link"]}" rel="stylesheet">
-                """
-                if head_content["google_font_link"]
-                else ""
-            ),
-            "preconnects": (
-                "\n".join(
-                    [
-                        f'<link rel="preconnect" href="{link}">'
-                        for link in head_content["preconnects"]
-                    ]
-                )
-                if isinstance(head_content["preconnects"], list)
-                else (
-                    f'<link rel="preconnect" href="{head_content["preconnects"]}">'
-                    if head_content["preconnects"]
-                    else ""
-                )
-            ),
-            "stylesheets": (
-                "\n".join(
-                    [
-                        f'<link rel="stylesheet" href="{sheet}">'
-                        for sheet in head_content["stylesheets"]
-                    ]
-                )
-                if isinstance(head_content["stylesheets"], list)
-                else (
-                    f'<link rel="stylesheet" href="{head_content["stylesheets"]}">'
-                    if head_content["stylesheets"]
-                    else ""
-                )
-            ),
-            "robots": (
-                f'<meta name="robots" content="{head_content["robots"]}">'
-                if head_content["robots"]
-                else ""
-            ),
-            "head_extra": (
-                "\n".join(head_content["head_extra"])
-                if isinstance(head_content["head_extra"], list)
-                else (
-                    f'{head_content["head_extra"]}'
-                    if head_content["head_extra"]
-                    else ""
-                )
-            ),
-        }
-        return formatted_head_content
-
-    def _merge_head_data(self, front_matter: dict, global_metadata: dict):
-        """
-        Format the head data for the HTML document. This includes merging
-        global metadata with front matter and generating the HTML head section.
-        """
-        # Merge global metadata with front matter, with front_matter taking precedence
-        metadata = {
-            "title": front_matter.get(
-                "title", global_metadata.get("title", "Shodo SSG")
-            ),
-            "lang": front_matter.get("lang", global_metadata.get("lang", "en")),
-            "charset": front_matter.get(
-                "charset", global_metadata.get("charset", "UTF-8")
-            ),
-            "description": front_matter.get(
-                "description", global_metadata.get("description", "")
-            ),
-            "keywords": front_matter.get(
-                "keywords", global_metadata.get("keywords", "")
-            ),
-            "author": front_matter.get("author", global_metadata.get("author", "")),
-            "theme_color": front_matter.get(
-                "theme_color", global_metadata.get("theme_color", "")
-            ),
-            "og_image": front_matter.get(
-                "og_image", global_metadata.get("og_image", "")
-            ),
-            "og_image_alt": front_matter.get(
-                "og_image_alt", global_metadata.get("og_image_alt", "")
-            ),
-            "og_title": front_matter.get(
-                "og_title", global_metadata.get("og_title", "")
-            ),
-            "og_description": front_matter.get(
-                "og_description", global_metadata.get("og_description", "")
-            ),
-            "og_url": front_matter.get("og_url", global_metadata.get("og_url", "")),
-            "og_type": front_matter.get("og_type", global_metadata.get("og_type", "")),
-            "og_site_name": front_matter.get(
-                "og_site_name", global_metadata.get("og_site_name", "")
-            ),
-            "og_locale": front_matter.get(
-                "og_locale", global_metadata.get("og_locale", "")
-            ),
-            "canonical": front_matter.get(
-                "canonical", global_metadata.get("canonical", "")
-            ),
-            "google_font_link": front_matter.get(
-                "google_font_link", global_metadata.get("google_font_link", "")
-            ),
-            "preconnects": front_matter.get(
-                "preconnects", global_metadata.get("preconnects", [])
-            ),
-            "stylesheets": front_matter.get(
-                "stylesheets", global_metadata.get("stylesheets", [])
-            ),
-            "robots": front_matter.get("robots", global_metadata.get("robots", "")),
-            "head_extra": front_matter.get(
-                "head_extra", global_metadata.get("head_extra", "")
-            ),
-            "body_id": front_matter.get("body_id", global_metadata.get("body_id", "")),
-            "body_class": front_matter.get(
-                "body_class", global_metadata.get("body_class", "")
-            ),
-        }
-        return metadata
-
-    def _get_doc_tail(self, script_link="/static/scripts/main.js"):
-        """
-        Generate the HTML end section for a document, including script tag
-        for main.js and a closing body tag.
-        """
-        return f"""
-                <script type="module" src="{script_link}"></script>
-            </body>
-        </html>
-        """.strip()
-
-    def _write_html_from_template(
-        self, template_name, destination_dir, front_matter: Optional[dict] = None
-    ):
-        """
-        Render a template with the provided arguments and write the output to a file.
-        """
-        self._log_info(template_name, destination_dir)
         template = self.get_template(template_name)
         template_path = os.path.abspath(template.filename)
         if front_matter is None:
             front_matter = self.get_front_matter(template_path)
-        with open(destination_dir, "w", encoding="utf-8") as output_file:
+
+        file_type = front_matter.get("file_type", "html")
+        suffix = "/index.html"
+        if file_type == "xml":
+            suffix = ".xml"
+        else:
+            if not os.path.exists(destination_dir):
+                os.makedirs(destination_dir)
+
+        destination_path = f"{destination_dir.rstrip('/')}{suffix}"
+        self._log_info(template_name, destination_path)
+
+        if front_matter and front_matter.get("paginate", False):
+            self.pagination_handler.handle_pagination(
+                template_path, template, destination_path, front_matter=front_matter
+            )
+            return
+
+        if file_type == "xml":
+            self._write_xml_file(template, destination_path, front_matter)
+        else:
+            self._write_html_file(template, destination_path, front_matter)
+
+        self.context.front_matter_processor.clear_front_matter(destination_path)
+
+    def _write_html_file(
+        self, template: Template, destination_path, front_matter: dict
+    ):
+        """
+        Render a template as HTML and write it to a file.
+        """
+        doc_head = ""
+        doc_tail = ""
+        if not front_matter.get("no_wrapper", False):
+            doc_head = self.root_layout_builder.get_doc_head(
+                render_args=self.context.render_args, front_matter=front_matter
+            )
+            doc_tail = self.root_layout_builder.get_doc_tail()
+        with open(destination_path, "w", encoding="utf-8") as output_file:
             output_file.write(
-                self._get_doc_head(front_matter=front_matter)
-                + template.render(self.render_args)
-                + "\n"
-                + self._get_doc_tail()
+                doc_head + template.render(self.context.render_args) + "\n" + doc_tail
             )
 
-        self.clear_front_matter(destination_dir)
+    def _write_xml_file(self, template: Template, destination_path, front_matter: dict):
+        """
+        Render a template as XML and write it to a file.
+        """
+        declaration = '<?xml version="1.0" encoding="UTF-8"?>\n'
+        if front_matter.get("no_wrapper", False):
+            declaration = ""
+        with open(destination_path, "w", encoding="utf-8") as output_file:
+            output_file.write(
+                declaration + template.render(self.context.render_args).strip()
+            )
 
     def write_home_template(self):
         """
         Write the index.html file using the provided render arguments.
         """
-        return self._write_html_from_template(
-            "home.jinja", f"{self.build_dir}/index.html"
-        )
+        return self._process_template("home.jinja", f"{self.build_dir}")
 
     def write_linked_template_pages(self, nested_dirs=""):
         """
@@ -396,10 +145,8 @@ class TemplateHandler:
                 ):
                     template_name = os.path.join(nested_dirs, path)
                     page_name = nested_dirs + os.path.splitext(path)[0]
-                    if not os.path.exists(f"{self.build_dir}/{page_name}"):
-                        os.makedirs(f"{self.build_dir}/{page_name}")
-                    self._write_html_from_template(
-                        template_name, f"{self.build_dir}/{page_name}/index.html"
+                    self._process_template(
+                        template_name, f"{self.build_dir}/{page_name}"
                     )
                 path_from_root = os.path.join(self.root_path, pages_src_dir + path)
                 # If directory, recursively create a nested route
@@ -411,7 +158,7 @@ class TemplateHandler:
         """
         Writes html pages for each markdown file in the `articles` directory
         """
-        for md_page in self.md_pages:
+        for md_page in self.context.md_pages:
             # Get the layout for this template
             layout_template = self.get_md_layout_template(md_page["url_segment"])
             # Get the path
@@ -421,7 +168,8 @@ class TemplateHandler:
                 md_page["name"].strip("/"),
             )
 
-            self.update_render_arg("article", md_page["html"])
+            article_data = self.context.format_md_page_data(md_page)
+            self.context.update_render_arg("article", article_data)
 
             front_matter = md_page["front_matter"]
 
@@ -436,7 +184,8 @@ class TemplateHandler:
             if not os.path.exists(build_path):
                 os.makedirs(build_path)
 
-            self._write_html_from_template(layout_template, f"{build_path}/index.html")
+            self._process_template(layout_template, f"{build_path}")
+            self.context.update_render_arg("article", {})
 
     def get_md_layout_template(self, url_segment: str):
         """
@@ -475,111 +224,40 @@ class TemplateHandler:
             # in the front matter
             template_name = os.path.basename(file_path)
             template = self.get_template(template_name)
-            content = template.render(self.render_args)
+            # Temporarily suppress missing variable errors
+            self.pagination_handler.set_default_pagination_variables()
+            content = template.render(self.context.render_args)
+            self.context.update_render_arg("pagination", None)
         else:
             with open(file_path, "r", encoding="utf-8") as file:
                 content = file.read()
                 content = content.lstrip()
 
-        pattern = r"@frontmatter\s*(.*?)\s*@endfrontmatter"
-        pattern = re.compile(pattern, re.DOTALL)
-        front_matters = pattern.findall(content)
-        if front_matters:
-            # If the front matter is a list, merge them into a single dict,
-            # with the last one taking precedence
-            if isinstance(front_matters, list) and len(front_matters) >= 1:
-                combined_front_matter = {}
-                for fm in front_matters:
-                    fm = fm.replace("@frontmatter", "").replace("@endfrontmatter", "")
-                    fm = fm.strip()
-                    # If parsable json, return as dict
-                    if fm.startswith("{") and fm.endswith("}"):
-                        fm = self.json_loader.json_to_dict(fm)
-                        if isinstance(fm, dict):
-                            combined_front_matter.update(fm)
+        front_matter = self.context.front_matter_processor.get_front_matter(content)
+        return front_matter
 
-                # If the front matter is a dictionary, return it
-                if isinstance(combined_front_matter, dict):
-                    return combined_front_matter
-
-        return None
-
-    def clear_front_matter(
-        self, file_path: Optional[str] = None, content: Optional[str] = None
-    ):
+    def _pass_global_template_functions(self, funcs: list[callable]):
         """
-        Strips the front matter from the rendered html file. The front matter is a JSON object
-        that is enclosed by the tags `@frontmatter` and `@endfrontmatter`. In the html files
-        that were generated from markdown files, the front matter tags are also enclosed in
-        '<p>' tags. This function removes the front matter and the enclosing '<p>' tags if they
-        exist. If a file path is provided, the function will write the content back to the file
-        after removing the front matter. If no content is provided instead of a file path, the
-        function will return the content with the front matter removed.
+        Passes the provided functions to the template environment as global functions.
         """
-        front_matters = None
-
-        if content is None and file_path is not None:
-            with open(file_path, "r", encoding="utf-8") as file:
-                content = file.read()
-
-        if "<p>@frontmatter" in content:
-            pattern = r"(<p>@frontmatter\s*.*?\s*@endfrontmatter</p>)"
-            pattern = re.compile(pattern, re.DOTALL)
-            front_matters = pattern.findall(content)
-            if front_matters:
-                for fm in front_matters:
-                    fm = fm.strip()
-                    content = content.replace(fm, "")
-
-        if "@frontmatter" in content:
-            pattern = r"(@frontmatter\s*.*?\s*@endfrontmatter)"
-            pattern = re.compile(pattern, re.DOTALL)
-            front_matters = pattern.findall(content)
-            if front_matters:
-                for fm in front_matters:
-                    fm = fm.strip()
-                    content = content.replace(fm, "")
-        if front_matters and file_path:
-            with open(file_path, "w", encoding="utf-8") as file:
-                file.write(content)
-
-        return content
-
-    def _format_md_page_data(self, md_page: dict) -> dict:
-        """
-        Format the markdown page data for rendering. This includes extracting
-        the front matter and content from the markdown page. Used for rendering
-        a list of articles/posts in a template with the shodo_get_articles function.
-        """
-        post = {}
-        post["file_name"] = md_page["name"]
-        post["path"] = md_page["url_segment"] + md_page["name"]
-
-        front_matter = md_page["front_matter"]
-
-        if not isinstance(front_matter, dict):
-            front_matter = {}
-
-        post["title"] = front_matter.get("title", "")
-        post["description"] = front_matter.get("description", "")
-        post["summary"] = front_matter.get("summary", "")
-        post["keywords"] = front_matter.get("keywords", [])
-        post["author"] = front_matter.get("author", "")
-        post["category"] = front_matter.get("category", "")
-        post["tags"] = front_matter.get("tags", [])
-        post["date"] = front_matter.get("date", "")
-        post["draft"] = front_matter.get("draft", False)
-        post["image"] = front_matter.get("image", "")
-        post["image_alt"] = front_matter.get("image_alt", "")
-        post["content"] = md_page["html"]
-        post["modified"] = front_matter.get("modified", "")
-
-        return post
+        for func in funcs:
+            self.template_env.globals[func.__name__] = func
 
     def write(self):
         """
         Writes the root index.html and any linked html pages using the provided render arguments.
         """
+
+        self._pass_global_template_functions(
+            [
+                self.api.shodo_get_articles,
+                self.api.shodo_query_store,
+                self.api.shodo_get_excerpt,
+                self.api.get_rfc822,
+                self.api.rel_to_abs,
+                self.api.current_dt,
+            ]
+        )
         self.write_article_pages()
         self.write_home_template()
         self.write_linked_template_pages()

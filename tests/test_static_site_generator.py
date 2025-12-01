@@ -143,7 +143,9 @@ def test_static_site_generator_build(
     assert linked_template_pages_exist_in_build_dir(
         build_path, settings_dict["template_paths"]
     )
-    assert markdown_pages_exist_in_build_dir(build_path, template_handler.md_pages)
+    assert markdown_pages_exist_in_build_dir(
+        build_path, template_handler.context.md_pages
+    )
     assert scripts_exist_in_build_dir(build_path)
     assert css_exist_in_build_dir(build_path)
     assert images_exist_in_build_dir(build_path)

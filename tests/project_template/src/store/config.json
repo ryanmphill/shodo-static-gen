@@ -1,0 +1,21 @@
+{
+    "config": {
+        "metadata": {
+            "title": "Shodo - A Static Site Generator",
+            "description": "Shodo is a static site generator that uses Markdown and JSON files to generate a static site.",
+            "author": "Shodo",
+            "head_extra": [
+                "<script type='application/ld+json'>{ \"@context\": \"https://schema.org\", \"@type\": \"Article\", \"headline\": \"LD+JSON Article\", \"description\": \"This article has ld+json in head extra.\" }</script>",
+                "<script type='application/ld+json'>{ '@context': 'https://schema.org', '@type': 'Article', 'headline': 'LD+JSON Article', 'description': 'This article has ld+json in head extra.' }</script>",
+                "<script type='application/ld+json'>{\n \"@context\": \"https://schema.org\",\n \"@type\": \"Article\",\n \"headline\": \"LD+JSON Article\",\n \"description\": \"This article has ld+json in head extra.\"\n }</script>",
+                "<link rel='icon' href='/static/images/favicons/site-favicon-light.ico' type='image/x-icon' media='(prefers-color-scheme: light)'>",
+                "<link rel='icon' href='/static/images/favicons/site-favicon-dark.ico' type='image/x-icon' media='(prefers-color-scheme: dark)'>",
+                "<link rel='apple-touch-icon' href='/static/images/favicons/site-favicon-dark.png'>",
+                "<script type='text/javascript' src='/static/scripts/theme-loader.js'></script>",
+                "<link rel=\"stylesheet\" href=\"/static/styles/extra-styles.css\">"
+            ]
+        },
+        "url_origin": "https://shodo.dev",
+        "timezone": "America/Chicago"
+    }
+}

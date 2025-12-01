@@ -5,6 +5,7 @@ import os
 
 def get_linked_page_relative_build_paths(template_paths: list[str]):
     """Returns the expected relative paths to the linked template pages in the build directory"""
+    xml_page_templates: list[str] = ["/feed"]
     # Get the source paths for the linked page directories
     linked_page_dirs: list[str] = []
     for path in template_paths:
@@ -25,6 +26,8 @@ def get_linked_page_relative_build_paths(template_paths: list[str]):
                     + "/"
                     + os.path.splitext(file)[0]
                 )
+                if relative_path in xml_page_templates:
+                    relative_path = relative_path.strip("/") + ".xml"
                 linked_page_paths.append(relative_path.strip("/"))
 
     return linked_page_paths
@@ -68,7 +71,9 @@ def css_exist_in_build_dir(build_dir_path, styles_path_segment="static/styles"):
     return True
 
 
-def images_exist_in_build_dir(build_dir_path, images_path_segment="static/images"):
+def images_exist_in_build_dir(
+    build_dir_path, images_path_segment="static/assets/images"
+):
     """Returns True if all images exist in the build directory"""
     images_build_path = os.path.join(build_dir_path, images_path_segment)
     if not os.path.exists(images_build_path):

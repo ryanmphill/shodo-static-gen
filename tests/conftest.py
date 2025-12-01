@@ -5,18 +5,24 @@ import os
 import shutil
 import pytest
 
+from shodo_ssg.api import API
 from shodo_ssg.data_loader import (
     SettingsDict,
     MarkdownLoader,
     JSONLoader,
 )
 
+from shodo_ssg.front_matter_processor import FrontMatterProcessor
+from shodo_ssg.html_root_layout_builder import HTMLRootLayoutBuilder
+from shodo_ssg.pagination_handler import PaginationHandler
+from shodo_ssg.template_context import TemplateContext
 from shodo_ssg.template_handler import TemplateHandler
 
 from shodo_ssg.asset_writer import (
     FaviconWriter,
+    RootFilesWriter,
     ScriptWriter,
-    ImageWriter,
+    AssetWriter,
     CSSWriter,
     AssetHandler,
 )
@@ -31,7 +37,7 @@ def temp_project_path(tmp_path):
     temp_path = tmp_path / "project_template"
     temp_path.mkdir()
     # Create a copy of the project_template directory
-    src_dir = "shodo_ssg/project_template"
+    src_dir = "tests/project_template"
     dest_dir = os.path.abspath(temp_path)
     # Copy files and folders
     shutil.copytree(src_dir, dest_dir, dirs_exist_ok=True)
@@ -86,22 +92,53 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
             "json_config_path": os.path.join(temp_project_path, "src/store"),
             "favicon_path": os.path.join(temp_project_path, "src/favicon.ico"),
             "scripts_path": os.path.join(temp_project_path, "src/theme/static/scripts"),
-            "images_path": os.path.join(temp_project_path, "src/theme/static/images"),
+            "assets_path": os.path.join(temp_project_path, "src/theme/static/assets"),
             "styles_path": os.path.join(temp_project_path, "src/theme/static/styles"),
+            "root_files_path": os.path.join(temp_project_path, "src/root"),
         }
     )
 
 
 @pytest.fixture
-def template_handler_dependencies(
+def front_matter_processor_dependencies(
     settings_dict,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the FrontMatterProcessor class.
+    """
+    json_loader = JSONLoader(settings_dict)
+    return json_loader
+
+
+@pytest.fixture
+def template_context_dependencies(
+    settings_dict,
+    front_matter_processor_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """
+    Create the dependencies for the TemplateContext class.
+    """
+    markdown_loader = MarkdownLoader(settings_dict)
+    json_loader = front_matter_processor_dependencies
+    front_matter_processor = FrontMatterProcessor(json_loader)
+    return markdown_loader, json_loader, front_matter_processor
+
+
+@pytest.fixture
+def template_handler_dependencies(
+    settings_dict, template_context_dependencies
 ):  # pylint: disable=redefined-outer-name
     """
     Create the dependencies for the TemplateHandler class.
     """
-    markdown_loader = MarkdownLoader(settings_dict)
-    json_loader = JSONLoader(settings_dict)
-    return SettingsDict(settings_dict), markdown_loader, json_loader
+    root_layout_builder = HTMLRootLayoutBuilder()
+    markdown_loader, json_loader, front_matter_processor = template_context_dependencies
+    template_context = TemplateContext(
+        markdown_loader, json_loader, front_matter_processor
+    )
+    api = API(template_context, front_matter_processor)
+    pagination_handler = PaginationHandler(template_context, root_layout_builder, api)
+    return SettingsDict(settings_dict), root_layout_builder, pagination_handler, api
 
 
 @pytest.fixture
@@ -111,14 +148,19 @@ def static_site_generator_deps(
     """
     Create the dependencies for the StaticSiteGenerator class.
     """
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
     favicon_writer = FaviconWriter(settings)
     script_writer = ScriptWriter(settings)
-    image_writer = ImageWriter(settings)
+    asset_writer = AssetWriter(settings)
     css_writer = CSSWriter(settings)
+    root_files_writer = RootFilesWriter(settings)
     asset_handler = AssetHandler(
-        favicon_writer, script_writer, image_writer, css_writer
+        favicon_writer, script_writer, asset_writer, css_writer, root_files_writer
     )
     return template_handler, asset_handler
 
@@ -131,7 +173,8 @@ def create_test_build_settings_from_temp_path(temp_path):
         "json_config_path": f"{os.path.join(temp_path, 'src/store')}",
         "favicon_path": f"{os.path.join(temp_path, 'src/favicon.ico')}",
         "scripts_path": f"{os.path.join(temp_path, 'src/theme/static/scripts')}",
-        "images_path": f"{os.path.join(temp_path, 'src/theme/static/images')}",
+        "assets_path": f"{os.path.join(temp_path, 'src/theme/static/assets')}",
         "styles_path": f"{os.path.join(temp_path, 'src/theme/static/styles')}",
+        "root_files_path": f"{os.path.join(temp_path, 'src/root')}",
         "build_dir": f"{os.path.join(temp_path, 'dist')}",
     }

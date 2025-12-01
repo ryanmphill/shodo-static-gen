@@ -9,68 +9,18 @@ def test_template_handler_init(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the __init__ method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     assert template_handler.template_env
     assert template_handler.build_dir
     assert template_handler.root_path
-    assert template_handler.markdown_loader
-    assert template_handler.json_loader
-
-
-def test_template_handler_render_args(
-    template_handler_dependencies,
-):  # pylint: disable=redefined-outer-name
-    """Test the render_args property of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
-
-    assert template_handler.render_args
-    assert isinstance(template_handler.render_args, dict)
-    assert "metadata" in template_handler.render_args
-    assert "title" in template_handler.render_args["metadata"]
-    assert "description" in template_handler.render_args["metadata"]
-    assert "author" in template_handler.render_args["metadata"]
-    assert "short" in template_handler.render_args
-    assert "collections" in template_handler.render_args
-    assert "another_short" in template_handler.render_args["collections"]
-    assert "list_of_words" in template_handler.render_args
-    assert "home_page_title" in template_handler.render_args
-
-
-def test_template_handler_md_pages(
-    template_handler_dependencies,
-):  # pylint: disable=redefined-outer-name
-    """Test the md_pages property of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
-
-    assert template_handler.md_pages
-    assert isinstance(template_handler.md_pages, list)
-    assert template_handler.md_pages[0]
-    assert isinstance(template_handler.md_pages[0], dict)
-    assert "html" in template_handler.md_pages[0]
-    assert "url_segment" in template_handler.md_pages[0]
-    assert "name" in template_handler.md_pages[0]
-
-
-def test_template_handler_update_render_arg(
-    template_handler_dependencies,
-):  # pylint: disable=redefined-outer-name
-    """Test the update_render_arg method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
-
-    key = "test_key"
-    value = "test_value"
-
-    assert key not in template_handler.render_args
-
-    template_handler.update_render_arg(key, value)
-
-    assert key in template_handler.render_args
-    assert template_handler.render_args[key] == value
+    assert template_handler.context
+    assert template_handler.api
 
 
 def test_template_handler_get_template(
@@ -78,8 +28,12 @@ def test_template_handler_get_template(
     temp_project_path,
 ):  # pylint: disable=redefined-outer-name
     """Test the get_template method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     view_path = os.path.join(temp_project_path, "src/theme/views/")
 
@@ -102,8 +56,12 @@ def test_template_handler_write_home_template(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the write_home_template method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     if not os.path.exists(template_handler.build_dir):
         os.makedirs(template_handler.build_dir)
@@ -124,8 +82,12 @@ def test_template_handler_write_linked_template_pages(
     settings_dict,
 ):  # pylint: disable=redefined-outer-name
     """Test the write_linked_template_pages method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     # Get the source paths for the linked page directories
     linked_page_paths = get_linked_page_relative_build_paths(
@@ -136,24 +98,45 @@ def test_template_handler_write_linked_template_pages(
     if not os.path.exists(template_handler.build_dir):
         os.makedirs(template_handler.build_dir)
 
+    # Ensure the template functions are defined
+    # pylint: disable=protected-access
+    template_handler._pass_global_template_functions(
+        [
+            template_handler.api.shodo_get_articles,
+            template_handler.api.shodo_query_store,
+            template_handler.api.shodo_get_excerpt,
+            template_handler.api.get_rfc822,
+            template_handler.api.rel_to_abs,
+            template_handler.api.current_dt,
+        ]
+    )
+
     template_handler.write_linked_template_pages()
 
     for path in linked_page_paths:
-        assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
-        with open(
-            f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
-        ) as page_file:
-            page_contents = page_file.read()
-        assert page_contents
-        assert "<!DOCTYPE html>" in page_contents
+        if not path.endswith(".xml"):
+            assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
+            with open(
+                f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
+            ) as page_file:
+                page_contents = page_file.read()
+            assert page_contents
+            assert "<!DOCTYPE html>" in page_contents
+        else:
+            # Feed was marked with <file_type: "xml">, just check that the xml file exists
+            assert os.path.exists(f"{template_handler.build_dir}/{path}")
 
 
 def test_template_handler_get_front_matter_returns_front_matter_from_file(
     template_handler_dependencies, temp_project_path
 ):  # pylint: disable=redefined-outer-name
     """Test the get_front_matter method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     test_article_path = os.path.join(
         temp_project_path, "src/theme/markdown/articles/test_dir/"
@@ -186,51 +169,23 @@ def test_template_handler_get_front_matter_returns_front_matter_from_file(
         assert front_matter[key] != "This is the content of the test article."
 
 
-def test_template_handler_clear_front_matter_returns_content_without_front_matter(
-    template_handler_dependencies,
-):  # pylint: disable=redefined-outer-name
-    """Test the clear_front_matter method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
-
-    content = """
-    @frontmatter
-    {"title": "Test Article", "description": "This is a test article."}
-    @endfrontmatter
-    This is the content of the test article.
-    <p>@frontmatter
-    {"title": "Another Article", "description": "This is another test article."}
-    @endfrontmatter</p>
-    This is the content of another test article.
-    """
-
-    expected_content = """
-    This is the content of the test article.
-    This is the content of another test article.
-    """
-
-    result = template_handler.clear_front_matter(file_path=None, content=content)
-
-    # Remove all whitespace
-    result = "".join(result.split())
-    expected_content = "".join(expected_content.split())
-
-    assert result == expected_content
-
-
 def test_template_handler_write_article_pages(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the write_article_pages method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     if not os.path.exists(template_handler.build_dir):
         os.makedirs(template_handler.build_dir)
 
     template_handler.write_article_pages()
 
-    for md_page in template_handler.md_pages:
+    for md_page in template_handler.context.md_pages:
         build_path = os.path.join(
             template_handler.build_dir,
             md_page["url_segment"].strip("/"),
@@ -243,7 +198,9 @@ def test_template_handler_write_article_pages(
         assert page_contents
         assert "<!DOCTYPE html>" in page_contents
         assert (
-            template_handler.clear_front_matter(file_path=None, content=md_page["html"])
+            template_handler.context.front_matter_processor.clear_front_matter(
+                file_path=None, content=md_page["html"]
+            )
             in page_contents
         )
 
@@ -252,8 +209,12 @@ def test_template_handler_get_md_layout_template_defaults_to_root_layout(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the get_md_layout_template method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     url_segment = "test_url_segment"
 
@@ -267,8 +228,12 @@ def test_template_handler_get_md_layout_template_returns_matching_layout(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the get_md_layout_template method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     test_article_path = os.path.join(
         template_handler.root_path, "src/theme/markdown/articles/test_dir/"
@@ -301,8 +266,12 @@ def test_template_handler_write(
     template_handler_dependencies,
 ):  # pylint: disable=redefined-outer-name
     """Test the write method of the TemplateHandler class."""
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     if not os.path.exists(template_handler.build_dir):
         os.makedirs(template_handler.build_dir)
@@ -320,15 +289,19 @@ def test_template_handler_write(
     # Check that the linked pages were written
     linked_page_paths = get_linked_page_relative_build_paths(settings["template_paths"])
     for path in linked_page_paths:
-        assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
-        with open(
-            f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
-        ) as page_file:
-            page_contents = page_file.read()
-        assert page_contents
-        assert "<!DOCTYPE html>" in page_contents
+        if not path.endswith(".xml"):
+            assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
+            with open(
+                f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
+            ) as page_file:
+                page_contents = page_file.read()
+            assert page_contents
+            assert "<!DOCTYPE html>" in page_contents
+        else:
+            # Feed was marked with <file_type: "xml">, just check that the xml file exists
+            assert os.path.exists(f"{template_handler.build_dir}/{path}")
     # Check that the article pages were written
-    for md_page in template_handler.md_pages:
+    for md_page in template_handler.context.md_pages:
         build_path = os.path.join(
             template_handler.build_dir,
             md_page["url_segment"].strip("/"),
@@ -341,7 +314,9 @@ def test_template_handler_write(
         assert page_contents
         assert "<!DOCTYPE html>" in page_contents
         assert (
-            template_handler.clear_front_matter(file_path=None, content=md_page["html"])
+            template_handler.context.front_matter_processor.clear_front_matter(
+                file_path=None, content=md_page["html"]
+            )
             in page_contents
         )
 
@@ -353,8 +328,12 @@ def test_template_handler_write_outputs_frontmatter_with_correct_heirarchy(
     Test that the write method output of the TemplateHandler class overwrites the
     global config with the homepage frontmatter.
     """
-    settings, markdown_loader, json_loader = template_handler_dependencies
-    template_handler = TemplateHandler(settings, markdown_loader, json_loader)
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
 
     if not os.path.exists(template_handler.build_dir):
         os.makedirs(template_handler.build_dir)

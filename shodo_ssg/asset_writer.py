@@ -11,7 +11,7 @@ import shutil
 from shodo_ssg.data_loader import SettingsDict
 
 
-class AssetWriter:
+class BaseAssetWriter:
     """
     Base class for writing and compiling static assets that are to be included in the final build
     """
@@ -42,7 +42,7 @@ class AssetWriter:
             shutil.copytree(self.src_path, self.destination_path)
 
 
-class FaviconWriter(AssetWriter):
+class FaviconWriter(BaseAssetWriter):
     """
     Handles writing the favicon file to the destination directory
     """
@@ -56,7 +56,7 @@ class FaviconWriter(AssetWriter):
         )
 
 
-class ScriptWriter(AssetWriter):
+class ScriptWriter(BaseAssetWriter):
     """
     Handles writing all script files to the destination directory
     """
@@ -70,21 +70,22 @@ class ScriptWriter(AssetWriter):
         )
 
 
-class ImageWriter(AssetWriter):
+class AssetWriter(BaseAssetWriter):
     """
     Handles writing all image files to the destination directory
     """
 
     def __init__(self, settings: SettingsDict):
         """
-        Initializes the ImageWriter with the source and destination paths for the images
+        Initializes the AssetWriter with the source and destination paths for the images,
+        fonts, and any other static assets
         """
         super().__init__(
-            settings["images_path"], f"{settings['build_dir']}/static/images"
+            settings["assets_path"], f"{settings['build_dir']}/static/assets"
         )
 
 
-class CSSWriter(AssetWriter):
+class CSSWriter(BaseAssetWriter):
     """
     Handles writing all CSS files to the destination directory as a single CSS file
     """
@@ -130,14 +131,69 @@ class CSSWriter(AssetWriter):
                     outfile.write("\n\n")
 
 
+class RootFilesWriter(BaseAssetWriter):
+    """
+    Handles writing root-level files (like robots.txt, various config files, sitemap.xml)
+    to the destination directory
+    """
+
+    def __init__(self, settings: SettingsDict):
+        """
+        Initializes the RootFilesWriter with the source and destination paths for the root files
+        """
+        super().__init__(settings["root_files_path"], settings["build_dir"])
+
+    def log_info(self):
+        """
+        Prints a status message that the root files writing operation is taking place
+        """
+        logging.info(
+            "\033[94mCopying root-level files from %s to %s...\033[0m",
+            self.src_path,
+            self.destination_path,
+        )
+
+    def write(self):
+        """
+        Copies contents of self.src_path to self.destination_path, but not the self.src_path
+        directory itself. If one of the files already exists in the destination, it will be
+        overwritten and a warning will be logged. If one of the directories already exists in
+        the destination, its contents will be merged with the source directory's contents.
+        """
+        if not os.path.exists(self.src_path):
+            return
+        self.log_info()
+        for item in os.listdir(self.src_path):
+            s = os.path.join(self.src_path, item)
+            d = os.path.join(self.destination_path, item)
+            if os.path.isdir(s):
+                if os.path.exists(d):
+                    logging.info(
+                        "\033[94m- Directory %s already exists in destination."
+                        + " Merging contents.\033[0m",
+                        d,
+                    )
+                    shutil.copytree(s, d, dirs_exist_ok=True)
+                else:
+                    shutil.copytree(s, d)
+            else:
+                if os.path.exists(d):
+                    logging.warning(
+                        "\033[93mFile %s already exists in destination. Overwriting.\033[0m",
+                        d,
+                    )
+                shutil.copyfile(s, d)
+
+
 @dataclass
 class AssetHandler:
     """
     Data class that holds logic for writing static site files to the build directory,
-    including favicon, scripts, styles, and images
+    including favicon, scripts, styles, and miscellaneous assets
     """
 
     favicon: FaviconWriter
     scripts: ScriptWriter
-    images: ImageWriter
+    assets: AssetWriter
     styles: CSSWriter
+    root_files: RootFilesWriter

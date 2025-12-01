@@ -5,6 +5,7 @@ from files
 
 import logging
 import os
+import re
 from json import load, loads
 from abc import ABC, abstractmethod
 from io import TextIOWrapper
@@ -85,6 +86,8 @@ class MarkdownLoader(DataLoader):
         md_files = []
         md_dirs = self._get_nested_markdown_dirs(os.path.join(self.src_path, sub_dir))
         for md_dir_path in md_dirs:
+            if not os.path.exists(md_dir_path):
+                continue
             for file in os.listdir(md_dir_path):
                 if file.endswith(".md"):
                     md_files.append((md_dir_path, file))
@@ -175,6 +178,8 @@ class MarkdownLoader(DataLoader):
             markdown_dirs = []
 
         markdown_dirs.append(markdown_path)
+        if not os.path.exists(markdown_path):
+            return markdown_dirs
         for path in os.listdir(markdown_path):
             path_from_root = os.path.join(self.root_path, markdown_path + path)
             # For each directory, recursively append all a nested directories
@@ -230,6 +235,25 @@ class JSONLoader(DataLoader):
             json_file_path = os.path.join(json_dir_path, json_file)
             with open(json_file_path, "r", encoding="utf-8") as json_file:
                 converted_json: dict = load(json_file)
+
+                head_extra = (
+                    converted_json.get("config", {})
+                    .get("metadata", {})
+                    .get("head_extra", None)
+                )
+                if head_extra is not None and isinstance(head_extra, list):
+                    formatted_head_extra = []
+                    for item in head_extra:
+                        formatted_item = item
+                        # Using the json helper here to allow single quotes to be used
+                        # in tags instead of escaped double quotes, as well as ensuring
+                        # proper formatting for ld+json scripts
+                        formatted_item = self.format_string_for_json_compatibility(item)
+                        formatted_head_extra.append(formatted_item)
+                    converted_json["config"]["metadata"][
+                        "head_extra"
+                    ] = formatted_head_extra
+
                 loaded_args.update(converted_json)
 
         return loaded_args
@@ -245,6 +269,8 @@ class JSONLoader(DataLoader):
         if json_dirs is None:
             json_dirs = []
 
+        if not os.path.exists(json_path):
+            return json_dirs
         json_dirs.append(json_path)
         for path in os.listdir(json_path):
             path_from_root = os.path.join(self.root_path, json_path + path)
@@ -260,7 +286,6 @@ class JSONLoader(DataLoader):
         """
         result = {}
         try:
-            json_string = json_string.replace("'", '\\"')
             # Remove any trailing commas
             json_string = json_string.rstrip(",")
             # Remove any trailing whitespace
@@ -274,13 +299,86 @@ class JSONLoader(DataLoader):
         except ValueError as e:
             # Exit the script if JSON parsing fails
             raise SystemExit(
-                f"{json_string} Error parsing front matter JSON string: {e}. Exiting script."
+                f"{json_string} Error parsing JSON string: {e}. Exiting script."
             ) from e
         except TypeError as e:
             raise SystemExit(
-                f"""{json_string} Error converting front matter JSON string to dict: {e}. 
+                f"""{json_string} Error converting JSON string to dict: {e}. 
                 Exiting script."""
             ) from e
+        return result
+
+    def format_string_for_json_compatibility(self, filter_str: str) -> str:
+        """
+        Attempt to format a raw string to valid JSON
+        so that it can be parsed into a dictionary. This requires adding
+        quotes around unquoted dynamic template variables such as 'limit' and
+        'offset' so the JSON parser can handle it.
+        """
+        result = filter_str[:]
+
+        # Step 1: Find and protect all quoted strings (both single and double quoted)
+        # by replacing them with placeholders, then we'll restore them later
+        string_placeholders = []
+
+        def store_string(match):
+            """Store the string and return a placeholder"""
+            quote_char = match.group(1)  # ' or "
+            content = match.group(2)
+
+            # If it's a single-quoted string, convert to double-quoted and escape internal quotes
+            if quote_char == "'":
+                escaped_content = content.replace("\\", "\\\\").replace('"', '\\"')
+                # Restore escaped single quotes (or apostrophes as "'")
+                escaped_content = escaped_content.replace("<<<ESCAPED_SQUOTE>>>", "'")
+                final_string = f'"{escaped_content}"'
+            else:
+                # It's already double-quoted, just escape any unescaped internal double quotes
+                # First, protect already escaped quotes
+                temp = content.replace('\\"', "<<<ESCAPED_DQUOTE>>>")
+                # Now escape unescaped quotes
+                temp = temp.replace('"', '\\"')
+                # Restore the already escaped ones
+                temp = temp.replace("<<<ESCAPED_DQUOTE>>>", '\\"')
+                final_string = f'"{temp}"'
+
+            placeholder = f"<<<STRING_{len(string_placeholders)}>>>"
+            string_placeholders.append(final_string)
+            return placeholder
+
+        # Find and replace all escaped single quotes with <<<ESCAPED_SQUOTE>>>
+        result = result.replace("\\'", "<<<ESCAPED_SQUOTE>>>")
+
+        # Match both single and double quoted strings
+        result = re.sub(r"""(['"])([^\1]*?)\1""", store_string, result)
+
+        # Step 2: Now work with the structure without worrying about string contents
+        result = re.sub(r",\s*([\]}])", r"\1", result)  # Remove trailing commas
+        result = result.replace("\n", "")  # Remove newlines
+
+        # Step 3: Quote unquoted values
+        result = re.sub(
+            r':\s*([^"\[\]{},\s<][^,\}\]<]*?)(\s*[,\}\]])',
+            lambda m: f': "{m.group(1).strip()}"{m.group(2)}',
+            result,
+        )
+
+        # Step 4: Unquote numeric and boolean values
+        result = re.sub(r'"\s*(-?\d+(?:\.\d+)?)\s*"', r"\1", result)
+        # Change standalone True/False to true/false
+        result = re.sub(
+            r'"\s*(True|False)\s*"',
+            lambda m: m.group(1).lower(),
+            result,
+            flags=re.IGNORECASE,
+        )
+        result = re.sub(r'"\s*(True|False)\s*"', r"\1", result, flags=re.IGNORECASE)
+        result = re.sub(r'"\s*(\[|\]|\{|\})\s*"', r"\1", result)
+
+        # Step 5: Restore the string placeholders
+        for i, string_value in enumerate(string_placeholders):
+            result = result.replace(f"<<<STRING_{i}>>>", string_value)
+
         return result
 
 
