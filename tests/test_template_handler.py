@@ -114,7 +114,7 @@ def test_template_handler_write_linked_template_pages(
     template_handler.write_linked_template_pages()
 
     for path in linked_page_paths:
-        if not path.endswith("feed"):
+        if not path.endswith(".xml"):
             assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
             with open(
                 f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
@@ -124,7 +124,7 @@ def test_template_handler_write_linked_template_pages(
             assert "<!DOCTYPE html>" in page_contents
         else:
             # Feed was marked with <file_type: "xml">, just check that the xml file exists
-            assert os.path.exists(f"{template_handler.build_dir}/{path}.xml")
+            assert os.path.exists(f"{template_handler.build_dir}/{path}")
 
 
 def test_template_handler_get_front_matter_returns_front_matter_from_file(
@@ -289,7 +289,7 @@ def test_template_handler_write(
     # Check that the linked pages were written
     linked_page_paths = get_linked_page_relative_build_paths(settings["template_paths"])
     for path in linked_page_paths:
-        if not path.endswith("feed"):
+        if not path.endswith(".xml"):
             assert os.path.exists(f"{template_handler.build_dir}/{path}/index.html")
             with open(
                 f"{template_handler.build_dir}/{path}/index.html", "r", encoding="utf-8"
@@ -299,7 +299,7 @@ def test_template_handler_write(
             assert "<!DOCTYPE html>" in page_contents
         else:
             # Feed was marked with <file_type: "xml">, just check that the xml file exists
-            assert os.path.exists(f"{template_handler.build_dir}/{path}.xml")
+            assert os.path.exists(f"{template_handler.build_dir}/{path}")
     # Check that the article pages were written
     for md_page in template_handler.context.md_pages:
         build_path = os.path.join(

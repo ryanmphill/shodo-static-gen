@@ -74,6 +74,9 @@ class TemplateHandler:
         suffix = "/index.html"
         if file_type == "xml":
             suffix = ".xml"
+        else:
+            if not os.path.exists(destination_dir):
+                os.makedirs(destination_dir)
 
         destination_path = f"{destination_dir.rstrip('/')}{suffix}"
         self._log_info(template_name, destination_path)
@@ -142,8 +145,6 @@ class TemplateHandler:
                 ):
                     template_name = os.path.join(nested_dirs, path)
                     page_name = nested_dirs + os.path.splitext(path)[0]
-                    if not os.path.exists(f"{self.build_dir}/{page_name}"):
-                        os.makedirs(f"{self.build_dir}/{page_name}")
                     self._process_template(
                         template_name, f"{self.build_dir}/{page_name}"
                     )
