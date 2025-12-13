@@ -7,7 +7,7 @@ name = "shodo_ssg"
 version = "0.0.1a1"
 description = "A Python-based static site generator for building sites from Markdown and JSON files"
 authors = [{name = "Ryan Phillips", email = "ryanphillipssoftware@gmail.com"}]
-license = {text = "MIT"}
+license = "MIT"
 readme = "README.md"
 keywords = ["shodo", "static site generator", "ssg", "blog", "rss"]
 requires-python = ">=3.9"
@@ -19,7 +19,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Topic :: Internet",
