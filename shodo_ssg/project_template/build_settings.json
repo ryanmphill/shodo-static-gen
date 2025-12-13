@@ -18,5 +18,7 @@
     "===The directory containing files and directories to be copied directly to the root of the build directory===": "",
     "root_files_path": "src/root",
     "===The output build directory===": "",
-    "build_dir": "dist"
+    "build_dir": "dist",
+    "===Enable or disable automatic generation of header IDs in markdown files===": "",
+    "markdown_header_ids": true
 }

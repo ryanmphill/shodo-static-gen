@@ -9,7 +9,7 @@ import re
 from json import load, loads
 from abc import ABC, abstractmethod
 from io import TextIOWrapper
-from typing import TypedDict
+from typing import Optional, TypedDict
 from markdown2 import markdown
 
 
@@ -28,6 +28,7 @@ class SettingsDict(TypedDict):
     images_path: str
     styles_path: str
     build_dir: str
+    markdown_header_ids: Optional[bool] = None
 
 
 class DataLoader(ABC):
@@ -77,6 +78,7 @@ class MarkdownLoader(DataLoader):
         """
         super().__init__(settings["markdown_path"])
         self.root_path = settings["root_path"]
+        self.markdown_header_ids = settings.get("markdown_header_ids", None)
 
     def list_files(self, sub_dir="partials") -> list[tuple[str]]:
         """
@@ -103,9 +105,12 @@ class MarkdownLoader(DataLoader):
         """
         Takes an open markdown file and converts it to an html string
         """
-        return markdown(
-            markdown_file.read(), extras=["fenced-code-blocks", "code-friendly"]
-        )
+        md_extras = ["fenced-code-blocks", "code-friendly"]
+
+        if self.markdown_header_ids:
+            md_extras.append("header-ids")
+
+        return markdown(markdown_file.read(), extras=md_extras)
 
     def load_args(self):
         """

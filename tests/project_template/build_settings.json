@@ -9,5 +9,6 @@
     "styles_path": "src/theme/static/styles",
     "assets_path": "src/theme/static/assets",
     "root_files_path": "src/root",
-    "build_dir": "dist"
+    "build_dir": "dist",
+    "markdown_header_ids": true
 }
