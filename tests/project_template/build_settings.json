@@ -1,13 +1,13 @@
 {
     "root_template_paths": [
-        "src/theme/views"
+        "src/views"
     ],
-    "markdown_path": "src/theme/markdown",
+    "markdown_path": "src/markdown",
     "json_config_path": "src/store",
     "favicon_path": "src/favicon.ico",
-    "scripts_path": "src/theme/static/scripts",
-    "styles_path": "src/theme/static/styles",
-    "assets_path": "src/theme/static/assets",
+    "scripts_path": "src/static/scripts",
+    "styles_path": "src/static/styles",
+    "assets_path": "src/static/assets",
     "root_files_path": "src/root",
     "build_dir": "dist",
     "markdown_header_ids": true

@@ -9,7 +9,7 @@ def get_linked_page_relative_build_paths(template_paths: list[str]):
     # Get the source paths for the linked page directories
     linked_page_dirs: list[str] = []
     for path in template_paths:
-        if "src/theme/views/pages/" in path:
+        if "src/views/pages/" in path:
             linked_page_dirs.append(path)
     # Get the source paths for the linked page template files
     linked_page_paths = []
@@ -22,7 +22,7 @@ def get_linked_page_relative_build_paths(template_paths: list[str]):
                 or file.endswith(".jinja2")
             ):
                 relative_path = (
-                    path.split("src/theme/views/pages/")[-1].strip("/")
+                    path.split("src/views/pages/")[-1].strip("/")
                     + "/"
                     + os.path.splitext(file)[0]
                 )

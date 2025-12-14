@@ -70,31 +70,31 @@ def settings_dict(temp_project_path):  # pylint: disable=redefined-outer-name
     temp_abs_path = os.path.abspath(temp_project_path)
     return SettingsDict(
         {
+            "root_template_paths": [os.path.join(temp_project_path, "src/views/")],
             "template_paths": [
-                os.path.join(temp_project_path, "src/theme/views/"),
-                os.path.join(temp_project_path, "src/theme/views/articles/"),
-                os.path.join(temp_project_path, "src/theme/views/articles/blog/"),
-                os.path.join(
-                    temp_project_path, "src/theme/views/articles/blog/subject/"
-                ),
-                os.path.join(temp_project_path, "src/theme/views/articles/newsletter/"),
-                os.path.join(temp_project_path, "src/theme/views/pages/"),
-                os.path.join(temp_project_path, "src/theme/views/pages/nested-route/"),
+                os.path.join(temp_project_path, "src/views/"),
+                os.path.join(temp_project_path, "src/views/articles/"),
+                os.path.join(temp_project_path, "src/views/articles/blog/"),
+                os.path.join(temp_project_path, "src/views/articles/blog/subject/"),
+                os.path.join(temp_project_path, "src/views/articles/newsletter/"),
+                os.path.join(temp_project_path, "src/views/pages/"),
+                os.path.join(temp_project_path, "src/views/pages/nested-route/"),
                 os.path.join(
                     temp_project_path,
-                    "src/theme/views/pages/nested-route/double-nested-route/",
+                    "src/views/pages/nested-route/double-nested-route/",
                 ),
-                os.path.join(temp_project_path, "src/theme/views/partials/"),
+                os.path.join(temp_project_path, "src/views/partials/"),
             ],
             "root_path": temp_abs_path,
             "build_dir": os.path.join(temp_project_path, "dist"),
-            "markdown_path": os.path.join(temp_project_path, "src/theme/markdown"),
+            "markdown_path": os.path.join(temp_project_path, "src/markdown"),
             "json_config_path": os.path.join(temp_project_path, "src/store"),
             "favicon_path": os.path.join(temp_project_path, "src/favicon.ico"),
-            "scripts_path": os.path.join(temp_project_path, "src/theme/static/scripts"),
-            "assets_path": os.path.join(temp_project_path, "src/theme/static/assets"),
-            "styles_path": os.path.join(temp_project_path, "src/theme/static/styles"),
+            "scripts_path": os.path.join(temp_project_path, "src/static/scripts"),
+            "assets_path": os.path.join(temp_project_path, "src/static/assets"),
+            "styles_path": os.path.join(temp_project_path, "src/static/styles"),
             "root_files_path": os.path.join(temp_project_path, "src/root"),
+            "markdown_header_ids": True,
         }
     )
 
@@ -168,13 +168,14 @@ def static_site_generator_deps(
 def create_test_build_settings_from_temp_path(temp_path):
     """Create a dictionary of settings for testing."""
     return {
-        "root_template_paths": [f"{os.path.join(temp_path, 'src/theme/views')}"],
-        "markdown_path": f"{os.path.join(temp_path, 'src/theme/markdown')}",
+        "root_template_paths": [f"{os.path.join(temp_path, 'src/views')}"],
+        "markdown_path": f"{os.path.join(temp_path, 'src/markdown')}",
         "json_config_path": f"{os.path.join(temp_path, 'src/store')}",
         "favicon_path": f"{os.path.join(temp_path, 'src/favicon.ico')}",
-        "scripts_path": f"{os.path.join(temp_path, 'src/theme/static/scripts')}",
-        "assets_path": f"{os.path.join(temp_path, 'src/theme/static/assets')}",
-        "styles_path": f"{os.path.join(temp_path, 'src/theme/static/styles')}",
+        "scripts_path": f"{os.path.join(temp_path, 'src/static/scripts')}",
+        "assets_path": f"{os.path.join(temp_path, 'src/static/assets')}",
+        "styles_path": f"{os.path.join(temp_path, 'src/static/styles')}",
         "root_files_path": f"{os.path.join(temp_path, 'src/root')}",
         "build_dir": f"{os.path.join(temp_path, 'dist')}",
+        "markdown_header_ids": True,
     }

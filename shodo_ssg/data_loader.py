@@ -18,6 +18,7 @@ class SettingsDict(TypedDict):
     Schema for settings dictionary loaded from build_settings.json
     """
 
+    root_template_paths: list[str]
     template_paths: list[str]
     root_path: str
     build_dir: str
@@ -79,6 +80,7 @@ class MarkdownLoader(DataLoader):
         super().__init__(settings["markdown_path"])
         self.root_path = settings["root_path"]
         self.markdown_header_ids = settings.get("markdown_header_ids", None)
+        self.settings = settings
 
     def list_files(self, sub_dir="partials") -> list[tuple[str]]:
         """
@@ -123,8 +125,10 @@ class MarkdownLoader(DataLoader):
         for md_dir_path, md_file in self.list_files():
             md_file_path = os.path.join(md_dir_path, md_file)
             md_var_name = os.path.splitext(md_file)[0]
-            # Remove everything before "src/theme/markdown/partials/" to get the relative path
-            relative_paths = md_dir_path.split("src/theme/markdown/partials/")[-1]
+            # Remove everything before the defined markdown path to get the relative path
+            relative_paths = md_dir_path.split(os.path.join(self.src_path, "partials"))[
+                -1
+            ]
             # Split the relative path into a list of prefixes to append to md variable names
             name_prefixes = [s for s in relative_paths.split("/") if s]
             # Open and convert markdown file to html
@@ -163,20 +167,29 @@ class MarkdownLoader(DataLoader):
         for md_dir_path, md_file in self.list_files("articles"):
             page = {}
             md_file_path = os.path.join(md_dir_path, md_file)
+
             with open(md_file_path, "r", encoding="utf-8") as markdown_file:
                 page["html"] = self._convert_to_html(markdown_file)
+
             page["path"] = md_file_path
-            page["url_segment"] = md_dir_path.split("src/theme/markdown/articles")[-1]
+            page["url_segment"] = md_dir_path.split(
+                os.path.join(self.src_path, "articles")
+            )[-1]
+
             page["name"] = os.path.splitext(md_file)[0]
             markdown_pages.append(page)
+
         return markdown_pages
 
     def _get_nested_markdown_dirs(
-        self, markdown_path="src/theme/markdown/partials", markdown_dirs=None
+        self, markdown_path=None, markdown_dirs=None
     ) -> list[str]:
         """
         Retrieves all children directories of a parent markdown directory as a list
         """
+        if markdown_path is None:
+            markdown_path = os.path.join(self.src_path, "partials")
+
         markdown_path = markdown_path.rstrip("/") + "/"
 
         if markdown_dirs is None:
@@ -209,6 +222,7 @@ class JSONLoader(DataLoader):
         """
         super().__init__(settings["json_config_path"])
         self.root_path = settings["root_path"]
+        self.settings = settings
 
     def list_files(self, sub_dir="") -> list[tuple[str]]:
         """
@@ -263,12 +277,13 @@ class JSONLoader(DataLoader):
 
         return loaded_args
 
-    def _get_nested_json_dirs(
-        self, json_path="src/theme/json", json_dirs=None
-    ) -> list[str]:
+    def _get_nested_json_dirs(self, json_path=None, json_dirs=None) -> list[str]:
         """
         Retrieves all children directories of a parent JSON directory as a list
         """
+        if json_path is None:
+            json_path = self.src_path
+
         json_path = json_path.rstrip("/") + "/"
 
         if json_dirs is None:
@@ -450,9 +465,7 @@ class SettingsLoader(DataLoader):
 
         return build_dir
 
-    def get_nested_template_dirs(
-        self, template_path="src/theme/views/", template_dirs=None
-    ):
+    def get_nested_template_dirs(self, template_path, template_dirs=None):
         """
         Retrieves all children directories of a parent template directory as a list
         """

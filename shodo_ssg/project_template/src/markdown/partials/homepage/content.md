@@ -1,6 +1,6 @@
 ## Getting Started
 
-Get started by editing `src/theme/views/home.jinja` and then running 
+Get started by editing `src/views/home.jinja` and then running 
 
 ```
 python serve.py

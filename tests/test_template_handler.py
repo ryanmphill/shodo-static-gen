@@ -26,6 +26,7 @@ def test_template_handler_init(
 def test_template_handler_get_template(
     template_handler_dependencies,
     temp_project_path,
+    settings_dict,
 ):  # pylint: disable=redefined-outer-name
     """Test the get_template method of the TemplateHandler class."""
     settings, root_layout_builder, pagination_handler, api = (
@@ -35,7 +36,7 @@ def test_template_handler_get_template(
         settings, root_layout_builder, pagination_handler, api
     )
 
-    view_path = os.path.join(temp_project_path, "src/theme/views/")
+    view_path = os.path.join(temp_project_path, settings_dict["root_template_paths"][0])
 
     template_name = "hello_world.jinja"
     template_contents = "<div>Hello, World!</div>"
@@ -128,7 +129,7 @@ def test_template_handler_write_linked_template_pages(
 
 
 def test_template_handler_get_front_matter_returns_front_matter_from_file(
-    template_handler_dependencies, temp_project_path
+    template_handler_dependencies, temp_project_path, settings_dict
 ):  # pylint: disable=redefined-outer-name
     """Test the get_front_matter method of the TemplateHandler class."""
     settings, root_layout_builder, pagination_handler, api = (
@@ -139,7 +140,7 @@ def test_template_handler_get_front_matter_returns_front_matter_from_file(
     )
 
     test_article_path = os.path.join(
-        temp_project_path, "src/theme/markdown/articles/test_dir/"
+        temp_project_path, settings_dict["markdown_path"], "articles/test_dir/"
     )
     test_article_name = "test_article.md"
 
@@ -225,7 +226,7 @@ def test_template_handler_get_md_layout_template_defaults_to_root_layout(
 
 
 def test_template_handler_get_md_layout_template_returns_matching_layout(
-    template_handler_dependencies,
+    template_handler_dependencies, settings_dict
 ):  # pylint: disable=redefined-outer-name
     """Test the get_md_layout_template method of the TemplateHandler class."""
     settings, root_layout_builder, pagination_handler, api = (
@@ -236,10 +237,12 @@ def test_template_handler_get_md_layout_template_returns_matching_layout(
     )
 
     test_article_path = os.path.join(
-        template_handler.root_path, "src/theme/markdown/articles/test_dir/"
+        template_handler.root_path, settings_dict["markdown_path"], "articles/test_dir/"
     )
     test_layout_path = os.path.join(
-        template_handler.root_path, "src/theme/views/articles/test_dir/"
+        template_handler.root_path,
+        settings_dict["root_template_paths"][0],
+        "articles/test_dir/",
     )
     test_article_name = "test_article.md"
 
