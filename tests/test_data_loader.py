@@ -19,7 +19,7 @@ def test_markdown_loader_list_files(
     assert isinstance(files, list)
     assert isinstance(files[0], tuple)
     md_path, md_file_name = files[0]
-    assert "src/theme/markdown/" in md_path
+    assert settings_dict["markdown_path"] in md_path
     assert md_file_name.endswith(".md")
 
 

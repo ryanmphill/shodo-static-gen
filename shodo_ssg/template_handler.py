@@ -134,7 +134,11 @@ class TemplateHandler:
         """
         Write HTML pages linked from the index page using the provided render arguments.
         """
-        src_path = os.path.join(self.root_path, "src/theme/views/pages/")
+        primary_root_template_path = self.context.json_loader.settings[
+            "root_template_paths"
+        ][0]
+        src_path = os.path.join(self.root_path, primary_root_template_path, "pages")
+
         pages_src_dir = "/" + os.path.join(src_path, nested_dirs).strip("/") + "/"
         if os.path.exists(pages_src_dir) and os.listdir(pages_src_dir):
             for path in os.listdir(pages_src_dir):
@@ -197,9 +201,15 @@ class TemplateHandler:
         if not url_segment:
             return "articles/layout.jinja"
         template_path = os.path.join("articles", url_segment.strip("/"), "layout.jinja")
-        src_view_path = "/" + os.path.join(self.root_path, "src/theme/views/").strip(
-            "/"
-        )
+
+        primary_root_template_path = self.context.json_loader.settings[
+            "root_template_paths"
+        ][0]
+
+        src_view_path = "/" + os.path.join(
+            self.root_path, primary_root_template_path
+        ).strip("/")
+
         if os.path.exists(f"{src_view_path}/{template_path}"):
             return template_path
         segments = url_segment.strip("/").split("/")
