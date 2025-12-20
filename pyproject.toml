@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "shodo_ssg"
-version = "0.0.1a2"
+version = "0.0.1a3"
 description = "A Python-based static site generator for building sites from Markdown and JSON files"
 authors = [{name = "Ryan Phillips", email = "ryanphillipssoftware@gmail.com"}]
 license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 keywords = ["shodo", "static site generator", "ssg", "blog", "rss"]
 requires-python = ">=3.9"
