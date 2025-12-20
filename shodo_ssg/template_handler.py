@@ -72,6 +72,11 @@ class TemplateHandler:
                 file_path=template_path, template_name=template_name
             )
 
+        is_draft = front_matter.get("draft", False) in [True, "true", "1", "True", 1]
+
+        if is_draft:
+            return
+
         file_type = front_matter.get("file_type", "html")
         suffix = "/index.html"
         if file_type == "xml":
@@ -182,6 +187,8 @@ class TemplateHandler:
             if front_matter:
                 # Don't write the template if 'draft' is set in front matter
                 is_draft = front_matter.get("draft", False)
+                if isinstance(is_draft, bool) and is_draft:
+                    continue
                 if isinstance(is_draft, str) and (
                     is_draft.lower() == "true" or is_draft == "1"
                 ):
