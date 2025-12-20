@@ -68,7 +68,14 @@ class TemplateHandler:
         template = self.get_template(template_name)
         template_path = os.path.abspath(template.filename)
         if front_matter is None:
-            front_matter = self.get_front_matter(template_path)
+            front_matter = self.get_front_matter(
+                file_path=template_path, template_name=template_name
+            )
+
+        is_draft = front_matter.get("draft", False) in [True, "true", "1", "True", 1]
+
+        if is_draft:
+            return
 
         file_type = front_matter.get("file_type", "html")
         suffix = "/index.html"
@@ -180,6 +187,8 @@ class TemplateHandler:
             if front_matter:
                 # Don't write the template if 'draft' is set in front matter
                 is_draft = front_matter.get("draft", False)
+                if isinstance(is_draft, bool) and is_draft:
+                    continue
                 if isinstance(is_draft, str) and (
                     is_draft.lower() == "true" or is_draft == "1"
                 ):
@@ -216,7 +225,7 @@ class TemplateHandler:
         segments.pop()
         return self.get_md_layout_template("/".join(segments))
 
-    def get_front_matter(self, file_path):
+    def get_front_matter(self, file_path="", template_name=""):
         """
         Retrieves the front matter from either a markdown or jinja file. The front matter is
         the metadata that is used to populate the render arguments. It is a JSON object that
@@ -224,7 +233,7 @@ class TemplateHandler:
         the end of the front matter.
         """
         content = ""
-        if (
+        if template_name and (
             file_path.endswith(".jinja")
             or file_path.endswith(".j2")
             or file_path.endswith(".jinja2")
@@ -232,7 +241,6 @@ class TemplateHandler:
             # If the file is a jinja template, we need to render it so
             # that front matter from included templates is also included
             # in the front matter
-            template_name = os.path.basename(file_path)
             template = self.get_template(template_name)
             # Temporarily suppress missing variable errors
             self.pagination_handler.set_default_pagination_variables()

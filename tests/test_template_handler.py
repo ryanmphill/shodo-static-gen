@@ -356,3 +356,42 @@ def test_template_handler_write_outputs_frontmatter_with_correct_heirarchy(
     assert (
         '<meta name="description" content="Home page of the site">' in index_contents
     ), "Metadata should be pulled from the homepage frontmatter"
+
+
+def test_template_handler_write_outputs_article_layout_frontmatter_with_correct_heirarchy(
+    template_handler_dependencies,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test that the write method output of the TemplateHandler class overwrites the
+    global config with the article layout frontmatter.
+    """
+    settings, root_layout_builder, pagination_handler, api = (
+        template_handler_dependencies
+    )
+    template_handler = TemplateHandler(
+        settings, root_layout_builder, pagination_handler, api
+    )
+
+    if not os.path.exists(template_handler.build_dir):
+        os.makedirs(template_handler.build_dir)
+
+    template_handler.write()
+
+    build_path = os.path.join(
+        template_handler.build_dir,
+        "blog",
+        "subject",
+        "second-blog",
+    )
+
+    assert os.path.exists(build_path)
+    assert os.path.exists(f"{build_path}/index.html")
+    with open(f"{build_path}/index.html", "r", encoding="utf-8") as page_file:
+        page_contents = page_file.read()
+    assert page_contents
+    assert "<!DOCTYPE html>" in page_contents
+    assert (
+        'id="blog-subject-page-container"' in page_contents
+    ), "Body attributes should be pulled from the nested article layout frontmatter"
+
+    assert '<meta name="author" content="Shodo SSG Nested Layout">' in page_contents
