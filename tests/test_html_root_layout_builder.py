@@ -73,7 +73,6 @@ class TestHTMLRootLayoutBuilder:
         assert '<html lang="en">' in result
         assert '<meta charset="UTF-8">' in result
         assert "<title>Test Site</title>" in result
-        assert '<link rel="icon" type="image/x-icon" href="/favicon.ico">' in result
         assert '<link href="/static/styles/main.css" rel="stylesheet" />' in result
         assert "<body" in result
 
@@ -176,20 +175,18 @@ class TestHTMLRootLayoutBuilder:
         # Body attributes
         assert '<body id="main-page" class="home-page active">' in result
 
-    def test_get_doc_head_custom_styles_and_favicon(
+    def test_get_doc_head_custom_styles(
         self, builder: HTMLRootLayoutBuilder, minimal_render_args
     ):
         """Test custom stylesheet and favicon links"""
         result = builder.get_doc_head(
             minimal_render_args,
             styles_link="/custom/styles.css",
-            favicon_link='<link rel="icon" type="image/png" href="/custom-favicon.png">',
         )
         # Strip all newlines and extra spaces for easier assertions
         result = " ".join(result.split())
 
         assert '<link href="/custom/styles.css" rel="stylesheet" />' in result
-        assert '<link rel="icon" type="image/png" href="/custom-favicon.png">' in result
 
     def test_get_doc_head_empty_optional_fields(self, builder: HTMLRootLayoutBuilder):
         """Test that empty optional fields don't produce empty tags"""
