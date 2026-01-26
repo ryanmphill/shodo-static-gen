@@ -75,7 +75,7 @@ def test_json_loader_load_args_handles_head_extra_metadata(
     assert "head_extra" in metadata
     head_extra = metadata["head_extra"]
     assert isinstance(head_extra, list)
-    assert len(head_extra) == 8  # There are 8 elements in the head_extra list
+    assert len(head_extra) == 9  # There are 9 elements in the head_extra list
 
     assert " ".join(
         head_extra[0].strip().replace("\n", "").replace("\t", "").split()
@@ -112,6 +112,15 @@ def test_json_loader_load_args_handles_head_extra_metadata(
     assert " ".join(
         head_extra[3].strip().replace("\n", "").replace("\t", "").split()
     ) == " ".join(
+        ('<link rel="icon" type="image/x-icon" href="/favicon.ico">')
+        .strip()
+        .replace("\n", "")
+        .replace("\t", "")
+        .split()
+    )
+    assert " ".join(
+        head_extra[4].strip().replace("\n", "").replace("\t", "").split()
+    ) == " ".join(
         (
             '<link rel="icon" href="/static/images/favicons/site-favicon-light.ico"'
             + ' type="image/x-icon" media="(prefers-color-scheme: light)">'
@@ -122,7 +131,7 @@ def test_json_loader_load_args_handles_head_extra_metadata(
         .split()
     )
     assert " ".join(
-        head_extra[4].strip().replace("\n", "").replace("\t", "").split()
+        head_extra[5].strip().replace("\n", "").replace("\t", "").split()
     ) == " ".join(
         (
             '<link rel="icon" href="/static/images/favicons/site-favicon-dark.ico"'
@@ -134,7 +143,7 @@ def test_json_loader_load_args_handles_head_extra_metadata(
         .split()
     )
     assert " ".join(
-        head_extra[5].strip().replace("\n", "").replace("\t", "").split()
+        head_extra[6].strip().replace("\n", "").replace("\t", "").split()
     ) == " ".join(
         '<link rel="apple-touch-icon" href="/static/images/favicons/site-favicon-dark.png">'.strip()
         .replace("\n", "")
@@ -142,7 +151,7 @@ def test_json_loader_load_args_handles_head_extra_metadata(
         .split()
     )
     assert " ".join(
-        head_extra[6].strip().replace("\n", "").replace("\t", "").split()
+        head_extra[7].strip().replace("\n", "").replace("\t", "").split()
     ) == " ".join(
         '<script type="text/javascript" src="/static/scripts/theme-loader.js"></script>'.strip()
         .replace("\n", "")
@@ -150,7 +159,7 @@ def test_json_loader_load_args_handles_head_extra_metadata(
         .split()
     )
     assert " ".join(
-        head_extra[7].strip().replace("\n", "").replace("\t", "").split()
+        head_extra[8].strip().replace("\n", "").replace("\t", "").split()
     ) == " ".join(
         '<link rel="stylesheet" href="/static/styles/extra-styles.css">'.strip()
         .replace("\n", "")

@@ -12,7 +12,6 @@ class HTMLRootLayoutBuilder:
         self,
         render_args: dict,
         styles_link="/static/styles/main.css",
-        favicon_link='<link rel="icon" type="image/x-icon" href="/favicon.ico">',
         front_matter: Optional[dict] = None,
     ):
         """
@@ -44,7 +43,6 @@ class HTMLRootLayoutBuilder:
         <html lang="{lang}">
         <head>
             {head_content_html}
-            {favicon_link}
             <link href="{styles_link}" rel="stylesheet" />
         </head>
         <body
